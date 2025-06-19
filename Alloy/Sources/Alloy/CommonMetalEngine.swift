@@ -224,8 +224,8 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
             currentTexture = operations[i].outputTexture
             if operations[i] is TypedShaderOperation<DebayerParams> {
                 // Debayer halves dimensions
-                currentWidth = currentWidth / 2
-                currentHeight = currentHeight / 2
+                currentWidth /= 2
+                currentHeight /= 2
             } else if let typedOp = operations[i] as? TypedShaderOperation<MetalSquareCropParams> {
                 // Crop changes dimensions to the crop size
                 currentWidth = Int(typedOp.params.sideLength)
@@ -273,8 +273,8 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
         // Update dimensions based on operation type
         if operation is TypedShaderOperation<DebayerParams> {
             // Debayer halves dimensions
-            currentWidth = currentWidth / 2
-            currentHeight = currentHeight / 2
+            currentWidth /= 2
+            currentHeight /= 2
         } else if let typedOp = operation as? TypedShaderOperation<MetalSquareCropParams> {
             // Crop changes dimensions to the crop size
             currentWidth = Int(typedOp.params.sideLength)
