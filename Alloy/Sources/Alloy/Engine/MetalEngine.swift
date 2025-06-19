@@ -13,7 +13,8 @@ public class MetalEngine: @unchecked Sendable {
         "debayerKernelRGGB": "Debayer",
         "squareCrop": "SquareCrop", 
         "donutMask": "DonutMask",
-        "hsvPosition": "HSVPosition"
+        "hsvPosition": "HSVPosition",
+        "grayscale": "Grayscale",
     ]
     
     init?() {

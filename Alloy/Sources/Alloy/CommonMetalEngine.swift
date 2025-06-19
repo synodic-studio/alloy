@@ -148,6 +148,14 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                     params: typedOp.params,
                     threadgroupSize: typedOp.threadgroupSize
                 )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<GrayscaleParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize
+                )
             } else if let typedOp = operations[i] as? TypedShaderOperation<HSVPositionParams> {
                 // Handle dimension inheritance for HSVPosition
                 var finalParams = typedOp.params
@@ -229,7 +237,7 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                 currentWidth = Int(finalWidth)
                 currentHeight = Int(finalHeight)
             }
-            // Mask operations don't change dimensions
+            // Mask and grayscale operations don't change dimensions
         }
         
         return BaseShaderResult(
@@ -246,7 +254,7 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     }
     
     /// Reset the engine for a new operation chain
-    func reset() -> CommonMetalEngine {
+    public func reset() -> CommonMetalEngine {
         operations.removeAll()
         configuredWidth = 0
         configuredHeight = 0
@@ -278,7 +286,7 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
             currentWidth = Int(finalWidth)
             currentHeight = Int(finalHeight)
         }
-        // Mask operations don't change dimensions
+        // Mask and grayscale operations don't change dimensions
     }
     
     internal var inputWidth: Int {
