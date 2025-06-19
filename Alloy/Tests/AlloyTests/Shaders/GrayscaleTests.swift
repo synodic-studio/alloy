@@ -18,15 +18,15 @@ struct GrayscaleTests {
 
     @Test("Metal weighted luminance conversion is accurate")
     func testMetalWeightedLuminanceConversion() throws {
-        let r: Double = 0.5, g: Double = 0.8, b: Double = 0.3
-        let inputColor = NSColor(red: r, green: g, blue: b, alpha: 1.0)
-        
+        let r: CGFloat = 0.5, g: CGFloat = 0.8, b: CGFloat = 0.3
+        let inputPixel = Pixel(r: r, g: g, b: b)
+
         let weightedSum = (0.299 * r) + (0.587 * g) + (0.114 * b)
-        let expectedValue = UInt8(weightedSum * 255)
-        let expectedPixel = Pixel(w: expectedValue, a: 255)
+        let expectedValue = weightedSum
+        let expectedPixel = Pixel(w: expectedValue)
 
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .weighted,
             expected: expectedPixel
         )
@@ -34,12 +34,13 @@ struct GrayscaleTests {
 
     @Test("Metal average RGB conversion is accurate")
     func testMetalAverageConversion() throws {
-        let inputColor = NSColor(red: 0.6, green: 0.9, blue: 0.2, alpha: 1.0)
-        let expectedValue = UInt8(((0.6 + 0.9 + 0.2) / 3.0) * 255)
-        let expectedPixel = Pixel(w: expectedValue, a: 255)
+        let r: CGFloat = 0.6, g: CGFloat = 0.9, b: CGFloat = 0.2
+        let inputPixel = Pixel(r: r, g: g, b: b)
+        let expectedValue = (r + g + b) / 3.0
+        let expectedPixel = Pixel(w: expectedValue)
 
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .average,
             expected: expectedPixel
         )
@@ -48,65 +49,62 @@ struct GrayscaleTests {
     @Test("Metal red channel conversion is accurate")
     func testMetalRedChannelConversion() throws {
         let r: CGFloat = 0.7, g: CGFloat = 0.4, b: CGFloat = 0.9
-        let inputColor = NSColor(red: r, green: g, blue: b, alpha: 1.0)
-        let expectedValue = UInt8(r * 255)
+        let inputPixel = Pixel(r: r, g: g, b: b)
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .redChannel,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: r)
         )
     }
     
     @Test("Metal green channel conversion is accurate")
     func testMetalGreenChannelConversion() throws {
         let r: CGFloat = 0.7, g: CGFloat = 0.4, b: CGFloat = 0.9
-        let inputColor = NSColor(red: r, green: g, blue: b, alpha: 1.0)
-        let expectedValue = UInt8(g * 255)
+        let inputPixel = Pixel(r: r, g: g, b: b)
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .greenChannel,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: g)
         )
     }
     
     @Test("Metal blue channel conversion is accurate")
     func testMetalBlueChannelConversion() throws {
         let r: CGFloat = 0.7, g: CGFloat = 0.4, b: CGFloat = 0.9
-        let inputColor = NSColor(red: r, green: g, blue: b, alpha: 1.0)
-        let expectedValue = UInt8(b * 255)
+        let inputPixel = Pixel(r: r, g: g, b: b)
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .blueChannel,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: b)
         )
     }
 
     @Test("Metal max channel conversion is accurate")
     func testMetalMaxChannelConversion() throws {
         let r: CGFloat = 0.6, g: CGFloat = 0.2, b: CGFloat = 0.8
-        let inputColor = NSColor(red: r, green: g, blue: b, alpha: 1.0)
-        let expectedValue = UInt8(b * 255) // b is max
+        let inputPixel = Pixel(r: r, g: g, b: b)
+        let expectedValue = b // b is max
 
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .maxChannel,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: expectedValue)
         )
     }
     
     @Test("Metal min channel conversion is accurate")
     func testMetalMinChannelConversion() throws {
         let r: CGFloat = 0.6, g: CGFloat = 0.2, b: CGFloat = 0.8
-        let inputColor = NSColor(red: r, green: g, blue: b, alpha: 1.0)
-        let expectedValue = UInt8(g * 255) // g is min
+        let inputPixel = Pixel(r: r, g: g, b: b)
+        let expectedValue = g // g is min
 
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .minChannel,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: expectedValue)
         )
     }
     
@@ -114,55 +112,55 @@ struct GrayscaleTests {
 
     @Test("Metal black threshold remaps correctly")
     func testMetalBlackThresholdRemapping() throws {
-        let inputColor = NSColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0)
-        let expectedValue = UInt8(((0.6 - 0.2) / (1.0 - 0.2)) * 255)
+        let inputPixel = Pixel(w: 0.6)
+        let expectedValue = (0.6 - 0.2) / (1.0 - 0.2)
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .average,
             blackThreshold: 0.2,
             whiteThreshold: 1.0,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: expectedValue)
         )
     }
     
     @Test("Metal combined black and white thresholds remap correctly")
     func testMetalCombinedThresholdRemapping() throws {
-        let inputColor = NSColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-        let expectedValue = UInt8(((0.5 - 0.2) / (0.8 - 0.2)) * 255)
+        let inputPixel = Pixel(w: 0.5)
+        let expectedValue = ((0.5 - 0.2) / (0.8 - 0.2))
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .average,
             blackThreshold: 0.2,
             whiteThreshold: 0.8,
-            expected: Pixel(w: expectedValue, a: 255)
+            expected: Pixel(w: expectedValue)
         )
     }
 
     @Test("Metal value below black threshold returns zero")
     func testMetalValueBelowBlackThreshold() throws {
-        let inputColor = NSColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
+        let inputPixel = Pixel(w: 0.1)
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .average,
             blackThreshold: 0.2,
             whiteThreshold: 0.8,
-            expected: Pixel(r: 0, g: 0, b: 0, a: 255)
+            expected: Pixel(w: 0.0)
         )
     }
 
     @Test("Metal value above white threshold returns one")
     func testMetalValueAboveWhiteThreshold() throws {
-        let inputColor = NSColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1.0)
+        let inputPixel = Pixel(w: 0.9)
         
         try assertGrayscaleConversion(
-            input: inputColor,
+            input: inputPixel.nsColor,
             strategy: .average,
             blackThreshold: 0.2,
             whiteThreshold: 0.8,
-            expected: Pixel(r: 255, g: 255, b: 255, a: 255)
+            expected: Pixel(w: 1.0)
         )
     }
     
@@ -216,12 +214,11 @@ struct GrayscaleTests {
             return
         }
 
-        #expect(firstPixel.isApproximatelyEqual(to: expected, tolerance: 1),
-               "Conversion failed for \(strategy). Expected \(expected), got \(firstPixel)")
+        #expect(
+            firstPixel.isApproximatelyEqual(to: expected, tolerance: 1),
+            "Conversion failed for \(strategy). Expected \(expected), got \(firstPixel)"
+        )
     }
-    
-    /// Represents an RGBA pixel for testing purposes.
-
     
     /// Creates a 1x1 image Data object from a single NSColor.
     private func data(from color: NSColor) -> Data {
@@ -292,6 +289,18 @@ private struct Pixel: Equatable {
     }
 
     init(
+        r: Double,
+        g: Double,
+        b: Double,
+        a: Double = 1.0
+    ) {
+        self.r = UInt8(r * 255)
+        self.g = UInt8(g * 255)
+        self.b = UInt8(b * 255)
+        self.a = UInt8(a * 255)
+    }
+
+    init(
         w: UInt8,
         a: UInt8 = 255
     ) {
@@ -301,11 +310,32 @@ private struct Pixel: Equatable {
         self.a = a
     }
 
+    init(
+        w: Double,
+        a: Double = 1.0
+    ) {
+        self.r = UInt8(w * 255)
+        self.g = UInt8(w * 255)
+        self.b = UInt8(w * 255)
+        self.a = UInt8(a * 255)
+    }
+
     /// Checks if two pixels are approximately equal, within a given tolerance.
     func isApproximatelyEqual(to other: Pixel, tolerance: Int = 1) -> Bool {
         return abs(Int(self.r) - Int(other.r)) <= tolerance &&
         abs(Int(self.g) - Int(other.g)) <= tolerance &&
         abs(Int(self.b) - Int(other.b)) <= tolerance &&
         abs(Int(self.a) - Int(other.a)) <= tolerance
+    }
+}
+
+extension Pixel {
+    var nsColor: NSColor {
+        return NSColor(
+            red: CGFloat(r) / 255.0,
+            green: CGFloat(g) / 255.0,
+            blue: CGFloat(b) / 255.0,
+            alpha: CGFloat(a) / 255.0
+        )
     }
 }
