@@ -103,17 +103,3 @@ func testHSVPositionPresets() throws {
     // Execute with test data to verify functionality
     _ = try thirdEngine.execute(data: testData)
 }
-
-// MARK: - Helper Methods
-
-private func createMockRawData(width: Int, height: Int, bitDepth: Int) -> Data {
-    let bytesPerPixel = bitDepth == 16 ? 2 : 1
-    let count = width * height * bytesPerPixel
-    return Data(repeating: 128, count: count)
-}
-
-private func createMockImageData(width: Int, height: Int) -> Data {
-    let bytesPerPixel = 4 // RGBA
-    let count = width * height * bytesPerPixel
-    return Data(repeating: 255, count: count)
-} 
