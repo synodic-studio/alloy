@@ -22,7 +22,7 @@ let package = Package(
             name: "Alloy",
             dependencies: [],
             resources: [
-                .process("Shaders")
+                .copy("Shaders")
             ]
         ),
         .testTarget(
