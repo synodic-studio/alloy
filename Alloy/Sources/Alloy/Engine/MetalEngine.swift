@@ -2,7 +2,7 @@ import Metal
 import MetalKit
 
 /// Base class for Metal shader operations
-class MetalEngine: @unchecked Sendable {
+public class MetalEngine: @unchecked Sendable {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     var pipelineStates: [String: MTLComputePipelineState] = [:]

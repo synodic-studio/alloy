@@ -9,7 +9,7 @@ import Metal
 import AppKit
 
 extension MetalShaderResult {
-    var nsImage: NSImage? {
+    public var nsImage: NSImage? {
         guard let rgbData = data,
               let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
               let provider = CGDataProvider(data: rgbData as CFData),

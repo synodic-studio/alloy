@@ -2,7 +2,7 @@ import Metal
 import MetalKit
 
 /// A unified Metal engine that uses a builder pattern to chain shader operations
-class CommonMetalEngine: MetalEngine, @unchecked Sendable {
+public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     private var operations: [ShaderOperation] = []
     private var configuredWidth: Int = 0
     private var configuredHeight: Int = 0
@@ -12,12 +12,12 @@ class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     private var isRGBAInput: Bool = false
     
     /// Initialize with optional starting data
-    override init?() {
+    public override init?() {
         super.init()
     }
     
     /// Configure the pipeline with dimensions and operations for raw sensor data
-    func withRawData(width: Int, height: Int, bitDepth: Int = 8) throws -> CommonMetalEngine {
+    public func withRawData(width: Int, height: Int, bitDepth: Int = 8) throws -> CommonMetalEngine {
         // Validate input parameters
         guard width > 0, height > 0 else {
             throw MetalEngineError.generalError(message: "Width and height must be greater than 0")
@@ -38,7 +38,7 @@ class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     }
     
     /// Configure the pipeline with dimensions for already-processed RGBA data
-    func withRGBAData(width: Int, height: Int) throws -> CommonMetalEngine {
+    public func withRGBAData(width: Int, height: Int) throws -> CommonMetalEngine {
         // Validate input parameters
         guard width > 0, height > 0 else {
             throw MetalEngineError.generalError(message: "Width and height must be greater than 0")
@@ -55,7 +55,7 @@ class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     }
     
     /// Execute the configured pipeline with new input data
-    func execute(data: Data) throws -> BaseShaderResult {
+    public func execute(data: Data) throws -> BaseShaderResult {
         guard !operations.isEmpty else {
             throw MetalEngineError.generalError(message: "No operations to execute")
         }
@@ -240,7 +240,7 @@ class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     }
     
     /// Execute and convert to NSImage
-    func executeToImage(data: Data) throws -> NSImage? {
+    public func executeToImage(data: Data) throws -> NSImage? {
         let result = try execute(data: data)
         return result.nsImage
     }

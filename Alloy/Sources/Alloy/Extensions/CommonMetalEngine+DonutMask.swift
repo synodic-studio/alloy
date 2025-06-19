@@ -8,7 +8,7 @@ extension CommonMetalEngine {
     ///   - center: Center point of the donut (defaults to image center if nil)
     ///   - innerRadius: Inner radius of the donut mask
     /// - Returns: CommonMetalEngine for chaining
-    func donutMask(center: (x: Int, y: Int)? = nil, innerRadius: Int) throws -> CommonMetalEngine {
+    public func donutMask(center: (x: Int, y: Int)? = nil, innerRadius: Int) throws -> CommonMetalEngine {
         // Use center of image if not specified
         let maskCenter = center ?? (x: inputWidth / 2, y: inputHeight / 2)
         

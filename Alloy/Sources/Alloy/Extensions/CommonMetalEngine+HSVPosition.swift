@@ -2,7 +2,7 @@ import Metal
 import MetalKit
 
 /// HSV component enumeration for pixel positioning
-enum HSVAxis: UInt32 {
+public enum HSVAxis: UInt32 {
     case hue = 0
     case saturation = 1
     case value = 2
@@ -23,7 +23,7 @@ extension CommonMetalEngine {
     ///   - forceFullValue: Force value component to full (1.0) regardless of input (default: false)
     ///   - forceFullSaturation: Force saturation component to full (1.0) regardless of input (default: false)
     /// - Returns: CommonMetalEngine for chaining
-    func hsvPosition(
+    public func hsvPosition(
         xAxis: HSVAxis,
         yAxis: HSVAxis,
         width: Int? = nil,
@@ -112,7 +112,7 @@ extension CommonMetalEngine {
     /// - Parameters:
     ///   - pixelSize: Size of each plotted pixel (width and height in pixels, default: 1)
     /// - Returns: CommonMetalEngine for chaining
-    func hsvPositionSaturationValue(
+    public func hsvPositionSaturationValue(
         pixelSize: Int = 1
     ) throws -> CommonMetalEngine {
         return try hsvPosition(
@@ -129,7 +129,7 @@ extension CommonMetalEngine {
     ///   - pixelSize: Size of each plotted pixel (width and height in pixels, default: 1)
     ///   - forceFullSaturation: Force saturation component to full (1.0) regardless of input (default: false)
     /// - Returns: CommonMetalEngine for chaining
-    func hsvPositionHueValue(
+    public func hsvPositionHueValue(
         pixelSize: Int = 1,
         forceFullSaturation: Bool = false
     ) throws -> CommonMetalEngine {
@@ -148,7 +148,7 @@ extension CommonMetalEngine {
     ///   - pixelSize: Size of each plotted pixel (width and height in pixels, default: 1)
     ///   - forceFullValue: Force value component to full (1.0) regardless of input (default: false)
     /// - Returns: CommonMetalEngine for chaining
-    func hsvPositionHueSaturation(
+    public func hsvPositionHueSaturation(
         pixelSize: Int = 1,
         forceFullValue: Bool = false
     ) throws -> CommonMetalEngine {
