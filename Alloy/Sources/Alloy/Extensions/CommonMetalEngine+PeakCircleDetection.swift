@@ -1,6 +1,7 @@
 import Metal
 import MetalKit
 import MetalPerformanceShaders
+import simd
 
 extension CommonMetalEngine {
     
@@ -48,11 +49,11 @@ extension CommonMetalEngine {
         
         var allPeaks: [DetectedPeak] = []
         
-        // Generate templates and run correlation for each radius
+        // Generate templates and run correlation for each radius, in descending order
         let minRadius = minDiameter / 2
         let maxRadius = maxDiameter / 2
         
-        for radius in minRadius...maxRadius {
+        for radius in (minRadius...maxRadius).reversed() {
             guard let templateTexture = try createCircleTemplate(radius: radius) else { continue }
             
             // Perform normalized cross-correlation
@@ -326,6 +327,10 @@ extension CommonMetalEngine {
 }
 
 // MARK: - Math Helpers
+
+private func distance(_ a: SIMD2<Float>, _ b: SIMD2<Float>) -> Float {
+    return simd.distance(a, b)
+}
 
 private func smoothstep(_ edge0: Float, _ edge1: Float, _ x: Float) -> Float {
     let t = max(0, min(1, (x - edge0) / (edge1 - edge0)))
