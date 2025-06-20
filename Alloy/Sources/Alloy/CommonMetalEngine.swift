@@ -156,6 +156,14 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                     params: typedOp.params,
                     threadgroupSize: typedOp.threadgroupSize
                 )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<InvertParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize
+                )
             } else if let typedOp = operations[i] as? TypedShaderOperation<HSVPositionParams> {
                 // Handle dimension inheritance for HSVPosition
                 var finalParams = typedOp.params

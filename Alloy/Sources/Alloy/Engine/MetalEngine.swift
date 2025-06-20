@@ -15,6 +15,9 @@ public class MetalEngine: @unchecked Sendable {
         "donutMask": "DonutMask",
         "hsvPosition": "HSVPosition",
         "grayscale": "Grayscale",
+        "invert": "Invert",
+        "circleDetection": "CircleDetection",
+        "findPeaks": "PeakFinding",
     ]
     
     init?() {
