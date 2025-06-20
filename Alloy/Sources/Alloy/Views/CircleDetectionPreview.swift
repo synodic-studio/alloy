@@ -9,6 +9,7 @@ struct CircleDetectionPreview: View {
     @State private var maxCircles: Double = 10
     @State private var showInverted: Bool = false
     @State private var usePeakFinding: Bool = true
+    @State private var minDistance: Double = 10.0
     @State private var detectedCircles: [DetectedCircle] = []
     @State private var processingTime: Double = 0.0
     @State private var processedImage: NSImage?
@@ -58,6 +59,9 @@ struct CircleDetectionPreview: View {
             processImage()
         }
         .onChange(of: usePeakFinding) {
+            processImage()
+        }
+        .onChange(of: minDistance) {
             processImage()
         }
     }
@@ -206,6 +210,11 @@ struct CircleDetectionPreview: View {
                         Text("Match Quality: \(correlationThreshold, specifier: "%.2f")")
                     }
                     .help("How well the template must match (0.3 = loose, 1.0 = perfect match)")
+
+                    Slider(value: $minDistance, in: 1.0...50.0, step: 1.0) {
+                        Text("Min Distance: \(Int(minDistance))")
+                    }
+                    .help("Minimum distance between detected circles.")
                 } else {
                     Slider(value: $threshold, in: 0.1...1.0, step: 0.05) {
                         Text("Edge Threshold: \(threshold, specifier: "%.2f")")
@@ -401,7 +410,8 @@ struct CircleDetectionPreview: View {
                         minDiameter: Int(self.minDiameter),
                         maxDiameter: Int(self.maxDiameter),
                         correlationThreshold: Float(self.correlationThreshold),
-                        maxPeaks: Int(self.maxCircles)
+                        maxPeaks: Int(self.maxCircles),
+                        minDistance: Float(self.minDistance)
                     )
                 } else {
                     result = try finalEngine.executeWithCircleDetection(

@@ -11,13 +11,15 @@ extension CommonMetalEngine {
     ///   - maxDiameter: Maximum circle diameter to detect (default: 100)
     ///   - correlationThreshold: Correlation threshold (0.0-1.0, default: 0.7)
     ///   - maxPeaks: Maximum number of peaks to detect (default: 100)
+    ///   - minDistance: Minimum distance between peaks (default: 10.0)
     /// - Returns: CircleDetectionResult containing detected circles and processed texture
     public func executeWithPeakCircleDetection(
         data: Data,
         minDiameter: Int = 10,
         maxDiameter: Int = 100,
         correlationThreshold: Float = 0.7,
-        maxPeaks: Int = 100
+        maxPeaks: Int = 100,
+        minDistance: Float = 10.0
     ) async throws -> CircleDetectionResult {
         // Validate parameters
         guard minDiameter > 0, maxDiameter > minDiameter else {
@@ -30,6 +32,10 @@ extension CommonMetalEngine {
         
         guard maxPeaks > 0 else {
             throw MetalEngineError.generalError(message: "maxPeaks must be greater than 0")
+        }
+        
+        guard minDistance > 0 else {
+            throw MetalEngineError.generalError(message: "minDistance must be greater than 0")
         }
         
         // Execute existing operations to get the current texture
@@ -60,14 +66,15 @@ extension CommonMetalEngine {
                 in: correlationTexture,
                 radius: Float(radius),
                 threshold: correlationThreshold,
-                maxPeaks: maxPeaks
+                maxPeaks: maxPeaks,
+                minDistance: minDistance
             ) {
                 allPeaks.append(contentsOf: peaks)
             }
         }
         
         // Apply non-maximum suppression to remove overlapping detections
-        let finalPeaks = nonMaximumSuppression(peaks: allPeaks, minDistance: Float(minDiameter))
+        let finalPeaks = nonMaximumSuppression(peaks: allPeaks, minDistance: minDistance)
         
         // Convert peaks to DetectedCircle objects
         let detectedCircles = finalPeaks.map { $0.detectedCircle }
@@ -226,7 +233,8 @@ extension CommonMetalEngine {
         in texture: MTLTexture,
         radius: Float,
         threshold: Float,
-        maxPeaks: Int
+        maxPeaks: Int,
+        minDistance: Float
     ) async throws -> [DetectedPeak]? {
         guard let commandBuffer = commandQueue.makeCommandBuffer() else {
             throw MetalEngineError.commandBufferCreationFailed

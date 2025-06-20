@@ -15,10 +15,12 @@ kernel void findPeaks(
     device atomic_uint& peakCount [[buffer(1)]],
     constant float& threshold [[buffer(2)]],
     constant float& radius [[buffer(3)]],
+    constant float& minDistance [[buffer(4)]],
     uint2 gid [[thread_position_in_grid]]
 ) {
+    uint width = correlationTexture.get_width();
     // Ensure we are within the texture bounds
-    if (gid.x >= correlationTexture.get_width() || gid.y >= correlationTexture.get_height()) {
+    if (gid.x >= width || gid.y >= correlationTexture.get_height()) {
         return;
     }
 
@@ -31,14 +33,16 @@ kernel void findPeaks(
 
     // 2. Check if the center value is a local maximum in a 5x5 neighborhood
     // To avoid edge issues, we'll check bounds before reading.
-    for (int y = -2; y <= 2; ++y) {
-        for (int x = -2; x <= 2; ++x) {
+    int searchRadius = max(2, (int)(minDistance / 2.0f));
+
+    for (int y = -searchRadius; y <= searchRadius; ++y) {
+        for (int x = -searchRadius; x <= searchRadius; ++x) {
             if (x == 0 && y == 0) continue;
 
             int2 neighborCoord = int2(gid) + int2(x, y);
 
             // Clamp coordinates to be within texture bounds
-            neighborCoord.x = clamp(neighborCoord.x, 0, (int)correlationTexture.get_width() - 1);
+            neighborCoord.x = clamp(neighborCoord.x, 0, (int)width - 1);
             neighborCoord.y = clamp(neighborCoord.y, 0, (int)correlationTexture.get_height() - 1);
 
             if (correlationTexture.read(uint2(neighborCoord)).r > centerValue) {

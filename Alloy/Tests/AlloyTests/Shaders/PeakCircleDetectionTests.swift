@@ -21,7 +21,8 @@ func testPeakCircleDetectionBasic() async throws {
         minDiameter: 10,
         maxDiameter: 50,
         correlationThreshold: 0.6,
-        maxPeaks: 50
+        maxPeaks: 50,
+        minDistance: 10
     )
     
     #expect(result.width == size)
@@ -50,4 +51,31 @@ func testPeakCircleDetectionValidation() async throws {
     await #expect(throws: MetalEngineError.self) {
         _ = try await configuredEngine.executeWithPeakCircleDetection(data: testData, maxPeaks: 0)
     }
+}
+
+@Test("Peak Circle Detection Non-Maximum Suppression")
+func testPeakCircleDetectionNMS() async throws {
+    guard let engine = CommonMetalEngine() else {
+        throw MetalEngineError.generalError(message: "Failed to create Metal engine")
+    }
+    
+    let size = 400
+    let testData = createMockImageWithCircles(width: size, height: size)
+    
+    let configuredEngine = try engine
+        .withRGBAData(width: size, height: size)
+        .grayscale(strategy: .weighted)
+    
+    let result = try await configuredEngine.executeWithPeakCircleDetection(
+        data: testData,
+        minDiameter: 70,
+        maxDiameter: 75,
+        correlationThreshold: 0.5,
+        maxPeaks: 10,
+        minDistance: 30
+    )
+    
+    #expect(result.width == size)
+    #expect(result.height == size)
+    #expect(result.circleCount == 1)
 } 
