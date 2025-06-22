@@ -16,6 +16,7 @@ public class MetalEngine: @unchecked Sendable {
         "hsvPosition": "HSVPosition",
         "grayscale": "Grayscale",
         "invert": "Invert",
+        "erosion": "Erosion",
         "circleDetection": "CircleDetection"
     ]
     
