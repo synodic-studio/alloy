@@ -10,6 +10,8 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     private var currentWidth: Int = 0
     private var currentHeight: Int = 0
     private var isRGBAInput: Bool = false
+    internal var textureWidth: Int?
+    internal var textureHeight: Int?
     
     /// Initialize with optional starting data
     public override init?() {
@@ -44,6 +46,9 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
             throw MetalEngineError.generalError(message: "Width and height must be greater than 0")
         }
         
+        self.textureWidth = width
+        self.textureHeight = height
+        self.operations.removeAll()
         self.configuredWidth = width
         self.configuredHeight = height
         self.configuredBitDepth = 8 // RGBA is always 8-bit per component
@@ -270,6 +275,8 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
         currentWidth = 0
         currentHeight = 0
         isRGBAInput = false
+        textureWidth = nil
+        textureHeight = nil
         return self
     }
     

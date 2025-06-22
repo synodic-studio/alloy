@@ -16,9 +16,18 @@ public class MetalEngine: @unchecked Sendable {
         "hsvPosition": "HSVPosition",
         "grayscale": "Grayscale",
         "invert": "Invert",
-        "circleDetection": "CircleDetection",
-        "findPeaks": "PeakFinding",
+        "circleDetection": "CircleDetection"
     ]
+    
+    private let shaderMap: [String: String] = [
+        "grayscale": "Grayscale",
+        "hsvPosition": "HSVPosition",
+        "donutMask": "DonutMask",
+        "squareCrop": "SquareCrop",
+        "debayer": "Debayer"
+    ]
+    
+    internal var textureMap: [String: MTLTexture] = [:]
     
     init?() {
         // Get the default Metal device
