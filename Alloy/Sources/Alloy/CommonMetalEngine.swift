@@ -237,6 +237,30 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                     params: finalParams,
                     threadgroupSize: typedOp.threadgroupSize
                 )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<BlurParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize
+                )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<NoiseParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize
+                )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<PeakDetectionParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize
+                )
             } else {
                 throw MetalEngineError.generalError(message: "Unsupported operation type")
             }

@@ -70,24 +70,6 @@ extension CommonMetalEngine {
         return self
     }
     
-    /// Apply grayscale conversion with level adjustment using the adjustLevels method signature
-    /// - Parameters:
-    ///   - strategy: The grayscale conversion strategy to use
-    ///   - black: Black threshold for contrast adjustment (0.0-1.0)
-    ///   - white: White threshold for contrast adjustment (0.0-1.0)
-    /// - Returns: CommonMetalEngine for chaining
-    public func grayscale(
-        strategy: GrayscaleConversionStrategy,
-        adjustLevels black: Double,
-        white: Double
-    ) throws -> CommonMetalEngine {
-        return try grayscale(
-            strategy: strategy,
-            blackThreshold: black,
-            whiteThreshold: white
-        )
-    }
-    
     /// Apply black and white conversion to the current image using a threshold
     /// - Parameter threshold: Threshold value (0.0-1.0). Pixels below this value become black, above become white
     /// - Returns: CommonMetalEngine for chaining

@@ -17,7 +17,10 @@ public class MetalEngine: @unchecked Sendable {
         "grayscale": "Grayscale",
         "invert": "Invert",
         "erosion": "Erosion",
-        "circleDetection": "CircleDetection"
+        "circleDetection": "CircleDetection",
+        "blur": "Blur",
+        "noise": "Noise",
+        "peakDetection": "PeakDetection"
     ]
     
     private let shaderMap: [String: String] = [
