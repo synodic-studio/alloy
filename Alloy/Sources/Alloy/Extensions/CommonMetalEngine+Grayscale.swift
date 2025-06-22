@@ -87,4 +87,25 @@ extension CommonMetalEngine {
             whiteThreshold: white
         )
     }
+    
+    /// Apply black and white conversion to the current image using a threshold
+    /// - Parameter threshold: Threshold value (0.0-1.0). Pixels below this value become black, above become white
+    /// - Returns: CommonMetalEngine for chaining
+    public func blackAndWhite(threshold: Double) throws -> CommonMetalEngine {
+        // Validate parameter
+        guard threshold >= 0.0 && threshold <= 1.0 else {
+            throw MetalEngineError.generalError(message: "Threshold must be between 0.0 and 1.0")
+        }
+        
+        // For black and white conversion, we use the threshold as the black level
+        // and set white level just slightly above to create a sharp cutoff
+        let blackThreshold = threshold
+        let whiteThreshold = min(1.0, threshold + 0.001) // Small epsilon to ensure sharp transition
+        
+        return try grayscale(
+            strategy: .weighted, // Use standard luminance weights for best results
+            blackThreshold: blackThreshold,
+            whiteThreshold: whiteThreshold
+        )
+    }
 } 
