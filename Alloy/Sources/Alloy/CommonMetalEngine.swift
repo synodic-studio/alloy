@@ -347,4 +347,8 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     internal var inputBitDepth: Int {
         return configuredBitDepth
     }
+    
+    internal var hasOperations: Bool {
+        return !operations.isEmpty
+    }
 }

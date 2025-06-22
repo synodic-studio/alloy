@@ -29,6 +29,11 @@ extension CommonMetalEngine {
             throw MetalEngineError.generalError(message: "maxPeaks must be greater than 0")
         }
         
+        // Validate that engine has been configured with dimensions
+        guard inputWidth > 0 && inputHeight > 0 else {
+            throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions before peak detection. Call withRGBAData() or withRawData() first.")
+        }
+        
         // Create input texture directly from data
         let inputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .rgba8Uint,
@@ -130,6 +135,11 @@ extension CommonMetalEngine {
             throw MetalEngineError.generalError(message: "Neighborhood size must be 8 or 16")
         }
         
+        // Validate that engine has been configured with dimensions
+        guard inputWidth > 0 && inputHeight > 0 else {
+            throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions before peak detection. Call withRGBAData() or withRawData() first.")
+        }
+        
         // Create output texture (same dimensions as input)
         let outputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .rgba8Uint,
@@ -205,8 +215,40 @@ extension CommonMetalEngine {
             throw MetalEngineError.generalError(message: "maxPeaks must be greater than 0")
         }
         
-        // Execute existing operations to get the current texture
-        let intermediateResult = try execute(data: data)
+        // Execute existing operations if any, otherwise work directly with input data
+        let intermediateResult: BaseShaderResult
+        if hasOperations {
+            intermediateResult = try execute(data: data)
+        } else {
+            // No operations to execute, create input texture directly
+            let inputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .rgba8Uint,
+                width: inputWidth,
+                height: inputHeight,
+                mipmapped: false
+            )
+            inputDescriptor.usage = .shaderRead
+            inputDescriptor.storageMode = .shared
+            
+            guard let inputTexture = device.makeTexture(descriptor: inputDescriptor) else {
+                throw MetalEngineError.textureCreationFailed
+            }
+            
+            // Copy data to input texture
+            let region = MTLRegionMake2D(0, 0, inputWidth, inputHeight)
+            inputTexture.replace(
+                region: region,
+                mipmapLevel: 0,
+                withBytes: (data as NSData).bytes,
+                bytesPerRow: inputWidth * 4 // 4 bytes per RGBA pixel
+            )
+            
+            intermediateResult = BaseShaderResult(
+                texture: inputTexture,
+                width: inputWidth,
+                height: inputHeight
+            )
+        }
         
         // Create output texture for peak visualization
         let outputDescriptor = MTLTextureDescriptor.texture2DDescriptor(

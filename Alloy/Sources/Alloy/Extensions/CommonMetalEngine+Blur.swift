@@ -12,6 +12,11 @@ extension CommonMetalEngine {
             throw MetalEngineError.generalError(message: "Blur radius must be greater than 0")
         }
         
+        // Validate that engine has been configured with dimensions
+        guard inputWidth > 0 && inputHeight > 0 else {
+            throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions before applying blur. Call withRGBAData() or withRawData() first.")
+        }
+        
         // Create output texture (same dimensions as input)
         let outputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .rgba8Uint,

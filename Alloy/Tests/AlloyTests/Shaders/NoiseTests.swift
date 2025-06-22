@@ -29,7 +29,7 @@ struct NoiseTests {
             #expect(pixel.r <= 255, "Red channel should remain within bounds")
             #expect(pixel.g <= 255, "Green channel should remain within bounds")
             #expect(pixel.b <= 255, "Blue channel should remain within bounds")
-            #expect(pixel.a == 128, "Alpha should remain unchanged")  // Gray alpha = 0.5 * 255
+            #expect(pixel.a == 255, "Alpha should remain unchanged")  // NSColor.gray has alpha = 1.0
         }
     }
 
@@ -177,7 +177,9 @@ struct NoiseTests {
         guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
         
         // Should not throw
-        let _ = try engine.noise(magnitude: 0.0)
+        let _ = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 0.0)
     }
 
     @Test("Noise accepts valid magnitude of 1")
@@ -185,7 +187,9 @@ struct NoiseTests {
         guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
         
         // Should not throw
-        let _ = try engine.noise(magnitude: 1.0)
+        let _ = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 1.0)
     }
 
     // MARK: - Magnitude Effect Tests
@@ -254,7 +258,10 @@ struct NoiseTests {
         var g: CGFloat = 0
         var b: CGFloat = 0
         var a: CGFloat = 0
-        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        
+        // Convert to RGB colorspace if needed to avoid colorspace conversion errors
+        let rgbColor = color.usingColorSpace(.deviceRGB) ?? color
+        rgbColor.getRed(&r, green: &g, blue: &b, alpha: &a)
         
         return Data([
             UInt8(r * 255),
@@ -315,7 +322,10 @@ private struct Pixel: Equatable {
         var green: CGFloat = 0
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
-        r.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        // Convert to RGB colorspace if needed to avoid colorspace conversion errors
+        let rgbColor = r.usingColorSpace(.deviceRGB) ?? r
+        rgbColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         
         self.r = UInt8(red * 255)
         self.g = UInt8(green * 255)

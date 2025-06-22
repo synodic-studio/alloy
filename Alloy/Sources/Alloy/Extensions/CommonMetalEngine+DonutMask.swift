@@ -9,6 +9,11 @@ extension CommonMetalEngine {
     ///   - innerRadius: Inner radius of the donut mask
     /// - Returns: CommonMetalEngine for chaining
     public func donutMask(center: (x: Int, y: Int)? = nil, innerRadius: Int) throws -> CommonMetalEngine {
+        // Validate that engine has been configured with dimensions
+        guard inputWidth > 0 && inputHeight > 0 else {
+            throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions before applying donut mask. Call withRGBAData() or withRawData() first.")
+        }
+        
         // Use center of image if not specified
         let maskCenter = center ?? (x: inputWidth / 2, y: inputHeight / 2)
         

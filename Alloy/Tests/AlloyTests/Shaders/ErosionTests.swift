@@ -231,11 +231,12 @@ struct ErosionTests {
                         (r, g, b) = (255, 255, 255)
                     }
                 case .whiteSquareWithBorder:
-                    // Create a pattern where center pixels have black neighbors
-                    if (x == 1 || x == width - 2) && (y == 1 || y == height - 2) {
-                        (r, g, b) = (0, 0, 0)
+                    // Create a pattern where center pixel has direct 4-connected black neighbors
+                    // For a 5x5 grid, create a cross pattern with black pixels adjacent to center
+                    if (x == 2 && (y == 1 || y == 3)) || (y == 2 && (x == 1 || x == 3)) {
+                        (r, g, b) = (0, 0, 0)  // Black cross around center
                     } else {
-                        (r, g, b) = (255, 255, 255)
+                        (r, g, b) = (255, 255, 255)  // White elsewhere
                     }
                 case .diagonalPattern:
                     // Create diagonal black lines to test 8-connection vs 4-connection

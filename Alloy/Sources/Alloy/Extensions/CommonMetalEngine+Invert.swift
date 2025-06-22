@@ -7,6 +7,11 @@ extension CommonMetalEngine {
     /// Inverts the RGB channels while preserving the alpha channel
     /// - Returns: CommonMetalEngine for chaining
     public func invert() throws -> CommonMetalEngine {
+        // Validate that engine has been configured with dimensions
+        guard inputWidth > 0 && inputHeight > 0 else {
+            throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions before applying invert. Call withRGBAData() or withRawData() first.")
+        }
+        
         // Create output texture with same dimensions as input
         let outputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .rgba8Uint,

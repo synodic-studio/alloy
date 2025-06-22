@@ -226,7 +226,10 @@ struct GrayscaleTests {
         var g: CGFloat = 0
         var b: CGFloat = 0
         var a: CGFloat = 0
-        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        
+        // Convert to RGB colorspace if needed to avoid colorspace conversion errors
+        let rgbColor = color.usingColorSpace(.deviceRGB) ?? color
+        rgbColor.getRed(&r, green: &g, blue: &b, alpha: &a)
         
         return Data([
             UInt8(r * 255),
