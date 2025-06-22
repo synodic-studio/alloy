@@ -17,7 +17,6 @@ public class MetalEngine: @unchecked Sendable {
         "grayscale": "Grayscale",
         "invert": "Invert",
         "erosion": "Erosion",
-        "circleDetection": "CircleDetection",
         "blur": "Blur",
         "noise": "Noise",
         "peakDetection": "PeakDetection"
