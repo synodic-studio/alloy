@@ -4,6 +4,8 @@ import AppKit
 struct NoisePreview: View {
     @State private var magnitude: Double = 0.2
     @State private var seed: UInt32 = 42
+    @State private var ignoreBlack: Bool = false
+    @State private var ignoreWhite: Bool = false
     
     private let imageSize: CGFloat = 32
     private let displaySize: CGFloat = 256
@@ -75,7 +77,7 @@ struct NoisePreview: View {
     }
     
     private var controls: some View {
-        VStack {
+        VStack(spacing: 12) {
             Slider(value: $magnitude, in: 0.0...0.5) {
                 Text("Magnitude: \(magnitude, specifier: "%.2f")")
             }
@@ -87,6 +89,12 @@ struct NoisePreview: View {
                     seed = UInt32.random(in: 0...UInt32.max)
                 }
             }
+            
+            VStack(spacing: 8) {
+                Toggle("Ignore Black Pixels", isOn: $ignoreBlack)
+                Toggle("Ignore White Pixels", isOn: $ignoreWhite)
+            }
+            .toggleStyle(.checkbox)
         }
         .padding()
         .frame(maxWidth: 300)
@@ -127,6 +135,13 @@ struct NoisePreview: View {
         
         NSColor.blue.setFill()
         NSBezierPath(rect: NSRect(x: 24, y: 24, width: 4, height: 4)).fill()
+        
+        // Add pure black and white regions to test the ignore options
+        NSColor.black.setFill()
+        NSBezierPath(rect: NSRect(x: 0, y: 0, width: 2, height: 2)).fill()
+        
+        NSColor.white.setFill()
+        NSBezierPath(rect: NSRect(x: 30, y: 30, width: 2, height: 2)).fill()
 
         image.unlockFocus()
         return image
@@ -150,11 +165,18 @@ struct NoisePreview: View {
         }
         
         // Add some grayscale regions
-        NSColor(white: 0.9, alpha: 1.0).setFill()
-        NSBezierPath(rect: NSRect(x: 6, y: 6, width: 6, height: 6)).fill()
-        
-        NSColor(white: 0.1, alpha: 1.0).setFill()
-        NSBezierPath(rect: NSRect(x: 20, y: 20, width: 6, height: 6)).fill()
+        NSColor(white: 0.8, alpha: 1.0).setFill()
+        NSBezierPath(rect: NSRect(x: 8, y: 8, width: 5, height: 5)).fill()
+
+        NSColor(white: 0.2, alpha: 1.0).setFill()
+        NSBezierPath(rect: NSRect(x: 18, y: 18, width: 5, height: 6)).fill()
+
+        // Add pure black and white regions to test the ignore options
+        NSColor.black.setFill()
+        NSBezierPath(rect: NSRect(x: 0, y: 0, width: 5, height: 5)).fill()
+
+        NSColor.white.setFill()
+        NSBezierPath(rect: NSRect(x: 27, y: 27, width: 5, height: 5)).fill()
 
         image.unlockFocus()
         return image
@@ -192,7 +214,7 @@ struct NoisePreview: View {
             guard let engine = CommonMetalEngine() else { return nil }
             return try engine
                 .withRGBAData(width: width, height: height)
-                .noise(magnitude: magnitude, seed: seed)
+                .noise(magnitude: magnitude, seed: seed, ignoreBlack: ignoreBlack, ignoreWhite: ignoreWhite)
                 .executeToImage(data: data)
         } catch {
             print("Error processing image: \(error)")

@@ -4,6 +4,8 @@ using namespace metal;
 struct alignas(16) NoiseParams {
     float magnitude;     // Noise magnitude (0.0-1.0)
     uint seed;           // Random seed
+    uint ignoreBlack;    // Whether to ignore black pixels (0 = false, 1 = true)
+    uint ignoreWhite;    // Whether to ignore white pixels (0 = false, 1 = true)
 };
 
 // Simple pseudo-random number generator
@@ -34,6 +36,18 @@ kernel void noise(
     
     // Read input pixel
     uint4 inputColor = inputTexture.read(gid);
+    
+    // Check if we should ignore this pixel based on its color
+    bool isPureBlack = (inputColor.r == 0 && inputColor.g == 0 && inputColor.b == 0);
+    bool isPureWhite = (inputColor.r == 255 && inputColor.g == 255 && inputColor.b == 255);
+    
+    bool shouldIgnore = (params.ignoreBlack && isPureBlack) || (params.ignoreWhite && isPureWhite);
+    
+    if (shouldIgnore) {
+        // Skip noise and output the original pixel unchanged
+        outputTexture.write(inputColor, gid);
+        return;
+    }
     
     // Check if this is grayscale data (R=G=B)
     bool isGrayscale = (inputColor.r == inputColor.g && inputColor.g == inputColor.b);

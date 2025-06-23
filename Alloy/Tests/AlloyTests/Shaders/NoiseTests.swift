@@ -192,6 +192,183 @@ struct NoiseTests {
             .noise(magnitude: 1.0)
     }
 
+    // MARK: - Ignore Black/White Tests
+
+    @Test("ignoreBlack preserves pure black pixels")
+    func testIgnoreBlackPreservesBlackPixels() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        let blackData = self.data(from: NSColor.black)
+        
+        let result = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 1.0, seed: 42, ignoreBlack: true, ignoreWhite: false)
+            .execute(data: blackData)
+
+        let outputPixels = try pixels(from: result.texture)
+        let expectedPixel = Pixel(r: NSColor.black)
+        
+        #expect(
+            outputPixels.first?.isApproximatelyEqual(to: expectedPixel, tolerance: 0) == true,
+            "Black pixels should remain unchanged when ignoreBlack is true"
+        )
+    }
+
+    @Test("ignoreWhite preserves pure white pixels")
+    func testIgnoreWhitePreservesWhitePixels() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        let whiteData = self.data(from: NSColor.white)
+        
+        let result = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 1.0, seed: 42, ignoreBlack: false, ignoreWhite: true)
+            .execute(data: whiteData)
+
+        let outputPixels = try pixels(from: result.texture)
+        let expectedPixel = Pixel(r: NSColor.white)
+        
+        #expect(
+            outputPixels.first?.isApproximatelyEqual(to: expectedPixel, tolerance: 0) == true,
+            "White pixels should remain unchanged when ignoreWhite is true"
+        )
+    }
+
+    @Test("ignoreBlack does not affect non-black pixels")
+    func testIgnoreBlackDoesNotAffectNonBlackPixels() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        let grayData = self.data(from: NSColor.gray)
+        
+        let resultWithIgnore = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 0.5, seed: 42, ignoreBlack: true, ignoreWhite: false)
+            .execute(data: grayData)
+
+        let resultWithoutIgnore = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 0.5, seed: 42, ignoreBlack: false, ignoreWhite: false)
+            .execute(data: grayData)
+
+        let pixelsWithIgnore = try pixels(from: resultWithIgnore.texture)
+        let pixelsWithoutIgnore = try pixels(from: resultWithoutIgnore.texture)
+        
+        #expect(
+            pixelsWithIgnore.first?.isApproximatelyEqual(to: pixelsWithoutIgnore.first!, tolerance: 0) == true,
+            "ignoreBlack should not affect non-black pixels"
+        )
+    }
+
+    @Test("ignoreWhite does not affect non-white pixels")
+    func testIgnoreWhiteDoesNotAffectNonWhitePixels() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        let grayData = self.data(from: NSColor.gray)
+        
+        let resultWithIgnore = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 0.5, seed: 42, ignoreBlack: false, ignoreWhite: true)
+            .execute(data: grayData)
+
+        let resultWithoutIgnore = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 0.5, seed: 42, ignoreBlack: false, ignoreWhite: false)
+            .execute(data: grayData)
+
+        let pixelsWithIgnore = try pixels(from: resultWithIgnore.texture)
+        let pixelsWithoutIgnore = try pixels(from: resultWithoutIgnore.texture)
+        
+        #expect(
+            pixelsWithIgnore.first?.isApproximatelyEqual(to: pixelsWithoutIgnore.first!, tolerance: 0) == true,
+            "ignoreWhite should not affect non-white pixels"
+        )
+    }
+
+    @Test("both ignoreBlack and ignoreWhite can be used together")
+    func testBothIgnoreOptionsCanBeUsedTogether() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        // Create a 2x2 image with black, white, and gray pixels
+        let blackWhiteGrayData = Data([
+            // Row 1: Black pixel, White pixel
+            0, 0, 0, 255,        // Black
+            255, 255, 255, 255,  // White
+            // Row 2: Gray pixel, Gray pixel
+            128, 128, 128, 255,  // Gray
+            128, 128, 128, 255   // Gray
+        ])
+        
+        let result = try engine
+            .withRGBAData(width: 2, height: 2)
+            .noise(magnitude: 1.0, seed: 42, ignoreBlack: true, ignoreWhite: true)
+            .execute(data: blackWhiteGrayData)
+
+        let outputPixels = try pixels(from: result.texture)
+        
+        // Check that black pixel (0,0) is unchanged
+        let blackPixel = outputPixels[0]
+        #expect(blackPixel.r == 0 && blackPixel.g == 0 && blackPixel.b == 0, "Black pixel should be unchanged")
+        
+        // Check that white pixel (1,0) is unchanged  
+        let whitePixel = outputPixels[1]
+        #expect(whitePixel.r == 255 && whitePixel.g == 255 && whitePixel.b == 255, "White pixel should be unchanged")
+        
+        // Check that gray pixels have noise applied (should be different from original)
+        let grayPixel1 = outputPixels[2]
+        let grayPixel2 = outputPixels[3]
+        let hasNoise = (grayPixel1.r != 128 || grayPixel1.g != 128 || grayPixel1.b != 128) ||
+                      (grayPixel2.r != 128 || grayPixel2.g != 128 || grayPixel2.b != 128)
+        #expect(hasNoise, "Gray pixels should have noise applied")
+    }
+
+    @Test("ignoreBlack false allows noise on black pixels") 
+    func testIgnoreBlackFalseAllowsNoiseOnBlackPixels() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        let blackData = self.data(from: NSColor.black)
+        
+        // Try multiple seeds to ensure we get positive noise at least once
+        var foundNoise = false
+        let seedsToTry: [UInt32] = [42, 123, 456, 789, 1001]
+        
+        for seed in seedsToTry {
+            let result = try engine
+                .withRGBAData(width: 1, height: 1)
+                .noise(magnitude: 1.0, seed: seed, ignoreBlack: false, ignoreWhite: false)
+                .execute(data: blackData)
+
+            let outputPixels = try pixels(from: result.texture)
+            let originalPixel = Pixel(r: NSColor.black)
+            
+            if outputPixels.first?.isApproximatelyEqual(to: originalPixel, tolerance: 0) == false {
+                foundNoise = true
+                break
+            }
+        }
+        
+        #expect(foundNoise, "At least one seed should produce noise on black pixels when ignoreBlack is false")
+    }
+
+    @Test("ignoreWhite false allows noise on white pixels")
+    func testIgnoreWhiteFalseAllowsNoiseOnWhitePixels() throws {
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+        
+        let whiteData = self.data(from: NSColor.white)
+        
+        let result = try engine
+            .withRGBAData(width: 1, height: 1)
+            .noise(magnitude: 1.0, seed: 42, ignoreBlack: false, ignoreWhite: false)
+            .execute(data: whiteData)
+
+        let outputPixels = try pixels(from: result.texture)
+        let originalPixel = Pixel(r: NSColor.white)
+        
+        #expect(
+            outputPixels.first?.isApproximatelyEqual(to: originalPixel, tolerance: 0) == false,
+            "White pixels should have noise applied when ignoreWhite is false"
+        )
+    }
+
     // MARK: - Magnitude Effect Tests
 
     @Test("Higher magnitude produces more noise")
