@@ -127,17 +127,39 @@ struct PeakDetectionPreview: View {
         let peakX = 16
         let peakY = 16
         let brightness: UInt8 = 255
+        let middleGray: UInt8 = 128
         
         data.withUnsafeMutableBytes { rawPtr in
             let pixels = rawPtr.bindMemory(to: UInt8.self)
             
+            // Add perimeter of middle gray pixels around the peak
+            for dy in -1...1 {
+                for dx in -1...1 {
+                    let x = peakX + dx
+                    let y = peakY + dy
+                    
+                    // Skip if out of bounds
+                    if x < 0 || x >= width || y < 0 || y >= height { continue }
+                    
+                    // Skip the center pixel (we'll set it to bright white after)
+                    if dx == 0 && dy == 0 { continue }
+                    
+                    let pixelIndex = (y * width + x) * 4
+                    pixels[pixelIndex] = middleGray     // R
+                    pixels[pixelIndex + 1] = middleGray // G
+                    pixels[pixelIndex + 2] = middleGray // B
+                    pixels[pixelIndex + 3] = 255        // A
+                }
+            }
+            
+            // Set the center peak pixel to bright white
             let pixelIndex = (peakY * width + peakX) * 4
             pixels[pixelIndex] = brightness     // R
             pixels[pixelIndex + 1] = brightness // G
             pixels[pixelIndex + 2] = brightness // B
             pixels[pixelIndex + 3] = 255        // A
             
-            print("Placed single peak at (\(peakX), \(peakY)) with brightness \(brightness)")
+            print("Placed single peak at (\(peakX), \(peakY)) with brightness \(brightness) surrounded by gray perimeter")
         }
         
         // Create NSImage from raw data
