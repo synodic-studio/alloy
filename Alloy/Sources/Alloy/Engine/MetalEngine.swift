@@ -69,7 +69,10 @@ public class MetalEngine: @unchecked Sendable {
             return
         } catch {
             // This is expected to fail in some environments, so we'll try other methods.
-            print("Could not make default library from Bundle.module, falling back. Error: \(error)")
+            // Only log at debug level to reduce console spam
+            #if DEBUG
+            print("Alloy: Using fallback Metal library initialization")
+            #endif
         }
         
         // If that fails, try to get the default system library
@@ -79,7 +82,9 @@ public class MetalEngine: @unchecked Sendable {
         }
         
         // As a last resort, load and compile from source code
-        print("Falling back to compiling Metal shaders from source.")
+        #if DEBUG
+        print("Alloy: Compiling Metal shaders from source")
+        #endif
         var combinedSource = "#include <metal_stdlib>\nusing namespace metal;\n\n"
         
         for fileName in functionToFileMapping.values {
