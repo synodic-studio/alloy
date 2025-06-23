@@ -12,7 +12,6 @@ struct DetectedPeakData {
     float x;
     float y;
     float value;
-    float confidence;
 };
 
 kernel void peakDetection(
@@ -72,15 +71,10 @@ kernel void peakDetection(
         uint currentCount = atomic_fetch_add_explicit(peakCount, 1, memory_order_relaxed);
         
         if (currentCount < params.maxPeaks) {
-            // Calculate confidence based on how much higher this peak is than its neighbors
-            float confidence = (maxNeighborValue > 0.0) ? (centerIntensity - maxNeighborValue) / centerIntensity : 1.0;
-            confidence = clamp(confidence, 0.0, 1.0);
-            
             // Store peak data
             peakBuffer[currentCount].x = float(gid.x);
             peakBuffer[currentCount].y = float(gid.y);
             peakBuffer[currentCount].value = centerIntensity;
-            peakBuffer[currentCount].confidence = confidence;
         }
         
         // Highlight peak in red for visualization

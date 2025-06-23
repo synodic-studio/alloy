@@ -111,8 +111,7 @@ extension CommonMetalEngine {
                 let peak = DetectedPeak(
                     x: peakData.x,
                     y: peakData.y,
-                    value: peakData.value,
-                    confidence: peakData.confidence
+                    value: peakData.value
                 )
                 detectedPeaks.append(peak)
             }
@@ -304,8 +303,7 @@ extension CommonMetalEngine {
                 let peak = DetectedPeak(
                     x: peakData.x,
                     y: peakData.y,
-                    value: peakData.value,
-                    confidence: peakData.confidence
+                    value: peakData.value
                 )
                 detectedPeaks.append(peak)
             }
@@ -379,8 +377,8 @@ extension CommonMetalEngine {
     private func filterPeaksByDistance(peaks: [DetectedPeak], minDistance: Float) -> [DetectedPeak] {
         guard peaks.count > 1 else { return peaks }
         
-        // Sort by confidence (highest first)
-        let sortedPeaks = peaks.sorted { $0.confidence > $1.confidence }
+        // Sort by value (highest first)
+        let sortedPeaks = peaks.sorted { $0.value > $1.value }
         var filteredPeaks: [DetectedPeak] = []
         
         for peak in sortedPeaks {
@@ -391,7 +389,7 @@ extension CommonMetalEngine {
                 let dy = peak.y - existingPeak.y
                 let distance = sqrt(dx * dx + dy * dy)
                 
-                // If peaks are too close, discard the one with lower confidence
+                // If peaks are too close, discard the one with lower value
                 if distance < minDistance {
                     shouldKeep = false
                     break
@@ -414,5 +412,4 @@ private struct DetectedPeakData {
     let x: Float
     let y: Float
     let value: Float
-    let confidence: Float
 } 
