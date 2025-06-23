@@ -71,12 +71,12 @@ struct PeakDetectionPreview: View {
                                             .stroke(Color.red, lineWidth: 2)
                                             .frame(width: 8, height: 8)
                                         
-                                        Text("\(peak.x),\(peak.y)")
+                                        Text(String(format: "%.2f,%.2f", peak.x, peak.y))
                                             .font(.system(size: 8))
                                             .foregroundColor(.yellow)
                                             .offset(x: 0, y: -12)
                                     }
-                                    .position(x: scaledX, y: scaledY)
+                                    .position(x: scaledX + 4, y: scaledY + 4)
                                 }
                             }
                         )
