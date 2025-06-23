@@ -2,12 +2,33 @@ import SwiftUI
 import AppKit
 
 struct PeakDetectionPreview: View {
-    @State private var neighborhoodSize: Int = 8
-    @State private var detectedPeaks: [DetectedPeak] = []
-    @State private var testImage: NSImage?
     
-    private let imageSize: CGFloat = 32
-    private let displaySize: CGFloat = 256
+    // MARK: - Test Image Types
+    
+    enum TestImage: String, CaseIterable, Identifiable {
+        case singlePeak = "Single Peak"
+        case multiplePeaks = "Multiple Peaks"
+        case closePeaks = "Close Peaks"
+        case edgePeaks = "Edge Peaks"
+        case noisy = "Noisy Image"
+        
+        var id: String { self.rawValue }
+    }
+    
+    // MARK: - State
+    
+    @State private var neighborhoodSize: Int = 8
+    @State private var minDistance: Double = 3.0
+    @State private var maxPeaks: Double = 20.0
+    @State private var threshold: Double = 0.5
+    
+    @State private var detectedPeaks: [DetectedPeak] = []
+    @State private var originalImage: NSImage?
+    @State private var processedImage: NSImage?
+    @State private var selectedTest: TestImage = .singlePeak
+    
+    private let imageSize: CGFloat = 128
+    private let displaySize: CGFloat = 384
 
     var body: some View {
         VStack {
@@ -15,31 +36,47 @@ struct PeakDetectionPreview: View {
             controls
         }
         .padding()
-        .onAppear {
-            createTestImageAndDetectPeaks()
-        }
-        .onChange(of: neighborhoodSize) {
-            detectPeaksAsync()
-        }
+        .onAppear(perform: generateImageAndDetectPeaks)
+        .onChange(of: neighborhoodSize) { _, _ in detectPeaksAsync() }
+        .onChange(of: minDistance) { _, _ in detectPeaksAsync() }
+        .onChange(of: maxPeaks) { _, _ in detectPeaksAsync() }
+        .onChange(of: threshold) { _, _ in detectPeaksAsync() }
+        .onChange(of: selectedTest) { _, _ in generateImageAndDetectPeaks() }
     }
+    
+    // MARK: - Image Views
     
     private var imageComparison: some View {
-        VStack(spacing: 20) {
-            originalImageView
-            peakImageView
+        HStack(spacing: 20) {
+            imageDisplay(title: "Original", image: originalImage)
+            imageDisplay(
+                title: "Processed (\(detectedPeaks.count) peaks)",
+                image: processedImage,
+                showPeaks: true
+            )
         }
     }
     
-    private var originalImageView: some View {
+    private func imageDisplay(
+        title: String,
+        image: NSImage?,
+        showPeaks: Bool = false
+    ) -> some View {
         VStack {
-            Text("Original")
+            Text(title)
                 .font(.headline)
-            if let testImage {
-                Image(nsImage: testImage)
+            
+            if let image = image {
+                Image(nsImage: image)
                     .resizable()
                     .interpolation(.none)
                     .frame(width: displaySize, height: displaySize)
                     .border(Color.gray)
+                    .overlay {
+                        if showPeaks {
+                            peakOverlay
+                        }
+                    }
             } else {
                 Rectangle()
                     .fill(Color.gray)
@@ -49,143 +86,223 @@ struct PeakDetectionPreview: View {
         }
     }
     
-    private var peakImageView: some View {
-        VStack {
-            Text("Peak Detection (\(detectedPeaks.count) peaks)")
-                .font(.headline)
-            ZStack {
-                if let testImage {
-                    Image(nsImage: testImage)
-                        .resizable()
-                        .interpolation(.none)
-                        .frame(width: displaySize, height: displaySize)
-                        .border(Color.gray)
-                        .overlay(
-                            GeometryReader { geometry in
-                                ForEach(Array(detectedPeaks.enumerated()), id: \.offset) { index, peak in
-                                    let scaledX = CGFloat(peak.x) * geometry.size.width / imageSize
-                                    let scaledY = CGFloat(peak.y) * geometry.size.height / imageSize
-                                    
-                                    ZStack {
-                                        Circle()
-                                            .stroke(Color.red, lineWidth: 2)
-                                            .frame(width: 8, height: 8)
-                                        
-                                        Text(String(format: "%.2f,%.2f", peak.x, peak.y))
-                                            .font(.system(size: 8))
-                                            .foregroundColor(.yellow)
-                                            .offset(x: 0, y: -12)
-                                    }
-                                    .position(x: scaledX + 4, y: scaledY + 4)
-                                }
-                            }
-                        )
-                } else {
-                    Rectangle()
-                        .fill(Color.gray)
-                        .frame(width: displaySize, height: displaySize)
-                        .overlay(Text("Loading..."))
+    private var peakOverlay: some View {
+        GeometryReader { geometry in
+            ForEach(Array(detectedPeaks.enumerated()), id: \.offset) { _, peak in
+                let scaledX = CGFloat(peak.x) * geometry.size.width / imageSize
+                let scaledY = CGFloat(peak.y) * geometry.size.height / imageSize
+                
+                ZStack {
+                    Circle()
+                        .stroke(Color.red, lineWidth: 1)
+                        .frame(width: 8, height: 8)
+                    
+                    Text(String(format: "%.1f", peak.value))
+                        .font(.system(size: 8))
+                        .foregroundColor(.yellow)
+                        .offset(y: -10)
                 }
+                .position(x: scaledX, y: scaledY)
             }
         }
     }
     
+    // MARK: - Controls
+    
     private var controls: some View {
         VStack {
+            Picker("Test Image:", selection: $selectedTest) {
+                ForEach(TestImage.allCases) { test in
+                    Text(test.rawValue).tag(test)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            controlSlider(label: "Threshold", value: $threshold, range: 0.0...1.0, step: 0.05)
+            controlSlider(label: "Min Distance", value: $minDistance, range: 1...20, step: 1)
+            controlSlider(label: "Max Peaks", value: $maxPeaks, range: 1...100, step: 1)
+
             Picker("Neighborhood:", selection: $neighborhoodSize) {
                 Text("8 neighbors").tag(8)
                 Text("16 neighbors").tag(16)
             }
+            .pickerStyle(.segmented)
         }
         .padding()
-        .frame(maxWidth: 300)
+        .frame(maxWidth: 400)
         .monospacedDigit()
     }
+    
+    private func controlSlider(
+        label: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        HStack {
+            Text(label)
+                .frame(width: 100, alignment: .leading)
+            Slider(value: value, in: range, step: step)
+            Text(String(format: "%.2f", value.wrappedValue))
+                .frame(width: 50)
+        }
+    }
 
-    private func createTestImageAndDetectPeaks() {
-        let image = createTestImage()
-        self.testImage = image
+    // MARK: - Image Generation and Peak Detection
+    
+    private func generateImageAndDetectPeaks() {
+        let image = createTestImage(for: selectedTest)
+        self.originalImage = image
         detectPeaksAsync()
     }
     
-    private func createTestImage() -> NSImage {
-        // Create a simple test image directly with raw data to avoid coordinate confusion
+    private func createTestImage(for type: TestImage) -> NSImage {
         let width = Int(imageSize)
         let height = Int(imageSize)
-        let bytesPerRow = width * 4
-        var data = Data(count: height * bytesPerRow)
+        var data = Data(count: height * width * 4)
         
-        // Fill with black background
         data.withUnsafeMutableBytes { rawPtr in
             let pixels = rawPtr.bindMemory(to: UInt8.self)
-            for i in 0..<pixels.count {
-                pixels[i] = 0
+            for i in stride(from: 0, to: pixels.count, by: 4) {
+                pixels[i] = 0; pixels[i+1] = 0; pixels[i+2] = 0; pixels[i+3] = 255
             }
         }
         
-        // Add one bright pixel for simple testing (using Metal/SwiftUI coordinate system with (0,0) at top-left)
-        let peakX = 16
-        let peakY = 16
-        let brightness: UInt8 = 255
-        let middleGray: UInt8 = 128
+        switch type {
+        case .singlePeak:
+            addPeak(to: &data, x: 64, y: 64, brightness: 255, width: width)
+        case .multiplePeaks:
+            addPeak(to: &data, x: 30, y: 30, brightness: 255, width: width)
+            addPeak(to: &data, x: 90, y: 60, brightness: 200, width: width)
+            addPeak(to: &data, x: 50, y: 100, brightness: 150, width: width)
+        case .closePeaks:
+            addPeak(to: &data, x: 60, y: 64, brightness: 255, width: width)
+            addPeak(to: &data, x: 65, y: 64, brightness: 250, width: width)
+        case .edgePeaks:
+            addPeak(to: &data, x: 2, y: 64, brightness: 255, width: width)
+            addPeak(to: &data, x: 125, y: 125, brightness: 200, width: width)
+        case .noisy:
+            for _ in 0..<20 {
+                addPeak(to: &data,
+                    x: .random(in: 0..<width),
+                    y: .random(in: 0..<height),
+                    brightness: .random(in: 50...150),
+                    width: width)
+            }
+            addPeak(to: &data, x: 64, y: 64, brightness: 255, width: width) // A real peak
+        }
         
+        return NSImage.fromData(data: data, width: width, height: height) ?? NSImage()
+    }
+    
+    private func addPeak(to data: inout Data, x: Int, y: Int, brightness: UInt8, width: Int) {
+        guard x >= 0, x < width, y >= 0, y < width else { return }
         data.withUnsafeMutableBytes { rawPtr in
             let pixels = rawPtr.bindMemory(to: UInt8.self)
-            
-            // Add perimeter of middle gray pixels around the peak
-            for dy in -1...1 {
-                for dx in -1...1 {
-                    let x = peakX + dx
-                    let y = peakY + dy
-                    
-                    // Skip if out of bounds
-                    if x < 0 || x >= width || y < 0 || y >= height { continue }
-                    
-                    // Skip the center pixel (we'll set it to bright white after)
-                    if dx == 0 && dy == 0 { continue }
-                    
-                    let pixelIndex = (y * width + x) * 4
-                    pixels[pixelIndex] = middleGray     // R
-                    pixels[pixelIndex + 1] = middleGray // G
-                    pixels[pixelIndex + 2] = middleGray // B
-                    pixels[pixelIndex + 3] = 255        // A
+            let pixelIndex = (y * width + x) * 4
+            pixels[pixelIndex] = brightness
+            pixels[pixelIndex + 1] = brightness
+            pixels[pixelIndex + 2] = brightness
+            pixels[pixelIndex + 3] = 255
+        }
+    }
+    
+    private func detectPeaksAsync() {
+        guard let originalImage = originalImage,
+              let cgImage = originalImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        let data = originalImage.rgbaData
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                // Engine for processing the image
+                guard let imageEngine = CommonMetalEngine() else { return }
+                let imageResult = try imageEngine
+                    .withRGBAData(width: width, height: height)
+                    .peakDetection(neighborhoodSize: neighborhoodSize, threshold: threshold)
+                    .execute(data: data)
+                let finalImage = imageResult.texture.toNSImage(width: imageResult.width, height: imageResult.height)
+
+                // Engine for detecting peaks
+                guard let peakEngine = CommonMetalEngine() else { return }
+                let peaks = try peakEngine
+                    .withRGBAData(width: width, height: height)
+                    .detectPeaks(
+                        data: data,
+                        neighborhoodSize: neighborhoodSize,
+                        minDistance: minDistance,
+                        maxPeaks: Int(maxPeaks),
+                        threshold: threshold
+                    )
+
+                DispatchQueue.main.async {
+                    self.detectedPeaks = peaks
+                    self.processedImage = finalImage
+                    print("Detected \(peaks.count) peaks.")
+                }
+            } catch {
+                print("Error detecting peaks: \(error)")
+                DispatchQueue.main.async {
+                    self.detectedPeaks = []
+                    self.processedImage = nil
                 }
             }
-            
-            // Set the center peak pixel to bright white
-            let pixelIndex = (peakY * width + peakX) * 4
-            pixels[pixelIndex] = brightness     // R
-            pixels[pixelIndex + 1] = brightness // G
-            pixels[pixelIndex + 2] = brightness // B
-            pixels[pixelIndex + 3] = 255        // A
-            
-            print("Placed single peak at (\(peakX), \(peakY)) with brightness \(brightness) surrounded by gray perimeter")
         }
-        
-        // Create NSImage from raw data
-        let context = CGContext(
-            data: data.withUnsafeMutableBytes { $0.baseAddress },
+    }
+}
+
+// MARK: - NSImage Helper
+
+fileprivate extension MTLTexture {
+    func toNSImage(width: Int, height: Int) -> NSImage? {
+        // The texture format should be bgra8Unorm for direct conversion.
+        // If it's not, we might need a conversion step.
+        // For now, assuming rgba8Unorm can be read and manually arranged.
+        guard self.pixelFormat == .rgba8Unorm || self.pixelFormat == .rgba8Uint else {
+            print("Unsupported texture format for NSImage conversion")
+            return nil
+        }
+
+        let bytesPerRow = width * 4
+        let dataLength = bytesPerRow * height
+        let buffer = UnsafeMutableRawPointer.allocate(byteCount: dataLength, alignment: 1)
+        defer { buffer.deallocate() }
+
+        self.getBytes(
+            buffer,
+            bytesPerRow: bytesPerRow,
+            from: MTLRegionMake2D(0, 0, width, height),
+            mipmapLevel: 0
+        )
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue
+
+        guard let context = CGContext(
+            data: buffer,
             width: width,
             height: height,
             bitsPerComponent: 8,
             bytesPerRow: bytesPerRow,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
-        )
-        
-        guard let context, let cgImage = context.makeImage() else {
-            return NSImage(size: NSSize(width: imageSize, height: imageSize))
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else {
+            return nil
         }
-        
-        let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: imageSize, height: imageSize))
-        print("Created test image with dimensions: \(width)x\(height)")
-        return nsImage
+
+        guard let cgImage = context.makeImage() else {
+            return nil
+        }
+
+        return NSImage(cgImage: cgImage, size: NSSize(width: width, height: height))
     }
-    
-    private func detectPeaksAsync() {
-        guard let testImage, 
-              let cgImage = testImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
-        
+}
+
+fileprivate extension NSImage {
+    var rgbaData: Data {
+        guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return Data() }
         let width = cgImage.width
         let height = cgImage.height
         let bytesPerRow = width * 4
@@ -203,31 +320,25 @@ struct PeakDetectionPreview: View {
             )
         }
         
-        guard let context else { return }
+        guard let context = context else { return Data() }
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return data
+    }
+    
+    static func fromData(data: Data, width: Int, height: Int) -> NSImage? {
+        let bytesPerRow = width * 4
+        let context = CGContext(
+            data: UnsafeMutableRawPointer(mutating: (data as NSData).bytes),
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        )
         
-        do {
-            guard let engine = CommonMetalEngine() else { return }
-            print("Image dimensions: \(width)x\(height)")
-            let peaks = try engine
-                .withRGBAData(width: width, height: height)
-                .detectPeaks(
-                    data: data,
-                    neighborhoodSize: neighborhoodSize,
-                    minDistance: 3.0,
-                    maxPeaks: 20
-                )
-            
-            DispatchQueue.main.async {
-                self.detectedPeaks = peaks
-                print("Detected peaks: \(peaks.map { "(\($0.x), \($0.y))" }.joined(separator: ", "))")
-            }
-        } catch {
-            print("Error detecting peaks: \(error)")
-            DispatchQueue.main.async {
-                self.detectedPeaks = []
-            }
-        }
+        guard let context = context, let cgImage = context.makeImage() else { return nil }
+        return NSImage(cgImage: cgImage, size: NSSize(width: width, height: height))
     }
 }
 

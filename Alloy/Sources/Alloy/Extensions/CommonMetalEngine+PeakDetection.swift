@@ -9,12 +9,14 @@ extension CommonMetalEngine {
     ///   - neighborhoodSize: Number of neighbors to check (8 or 16, default: 8)
     ///   - minDistance: Minimum distance between peaks (default: 5.0)
     ///   - maxPeaks: Maximum number of peaks to detect (default: 100)
+    ///   - threshold: Minimum intensity threshold for peak detection (0.0-1.0, default: 0.5)
     /// - Returns: Array of detected peak coordinates
     public func detectPeaks(
         data: Data,
         neighborhoodSize: Int = 8,
         minDistance: Double = 5.0,
-        maxPeaks: Int = 100
+        maxPeaks: Int = 100,
+        threshold: Double = 0.5
     ) throws -> [DetectedPeak] {
         // Validate parameters
         guard neighborhoodSize == 8 || neighborhoodSize == 16 else {
@@ -27,6 +29,10 @@ extension CommonMetalEngine {
         
         guard maxPeaks > 0 else {
             throw MetalEngineError.generalError(message: "maxPeaks must be greater than 0")
+        }
+        
+        guard threshold >= 0.0 && threshold <= 1.0 else {
+            throw MetalEngineError.generalError(message: "Threshold must be between 0.0 and 1.0")
         }
         
         // Validate that engine has been configured with dimensions
@@ -95,7 +101,8 @@ extension CommonMetalEngine {
             params: PeakDetectionParams(
                 neighborhoodSize: neighborhoodSize,
                 minDistance: minDistance,
-                maxPeaks: maxPeaks
+                maxPeaks: maxPeaks,
+                threshold: threshold
             )
         )
         
@@ -127,11 +134,16 @@ extension CommonMetalEngine {
     /// - Parameter neighborhoodSize: Number of neighbors to check (8 or 16, default: 8)
     /// - Returns: CommonMetalEngine for chaining
     public func peakDetection(
-        neighborhoodSize: Int = 8
+        neighborhoodSize: Int = 8,
+        threshold: Double = 0.5
     ) throws -> CommonMetalEngine {
         // Validate parameters
         guard neighborhoodSize == 8 || neighborhoodSize == 16 else {
             throw MetalEngineError.generalError(message: "Neighborhood size must be 8 or 16")
+        }
+        
+        guard threshold >= 0.0 && threshold <= 1.0 else {
+            throw MetalEngineError.generalError(message: "Threshold must be between 0.0 and 1.0")
         }
         
         // Validate that engine has been configured with dimensions
@@ -172,7 +184,8 @@ extension CommonMetalEngine {
             params: PeakDetectionParams(
                 neighborhoodSize: neighborhoodSize,
                 minDistance: 1.0,  // Not used in simple version
-                maxPeaks: 100      // Not used in simple version
+                maxPeaks: 100,     // Not used in simple version
+                threshold: threshold
             ),
             threadgroupSize: nil
         )
@@ -287,7 +300,8 @@ extension CommonMetalEngine {
             params: PeakDetectionParams(
                 neighborhoodSize: neighborhoodSize,
                 minDistance: minDistance,
-                maxPeaks: maxPeaks
+                maxPeaks: maxPeaks,
+                threshold: threshold
             )
         )
         
@@ -344,13 +358,12 @@ extension CommonMetalEngine {
         computeEncoder.setBuffer(countBuffer, offset: 0, index: 2)
         
         // Set shader parameters
-        withUnsafeBytes(of: params) { rawBufferPointer in
-            computeEncoder.setBytes(
-                rawBufferPointer.baseAddress!,
-                length: MemoryLayout<PeakDetectionParams>.size,
-                index: 0
-            )
-        }
+        var metalParams = params
+        computeEncoder.setBytes(
+            &metalParams,
+            length: MemoryLayout<PeakDetectionParams>.size,
+            index: 0
+        )
         
         // Calculate threadgroup sizes
         let threadgroupSize = calculateOptimalThreadgroupSize(
@@ -412,4 +425,5 @@ private struct DetectedPeakData {
     let x: Float
     let y: Float
     let value: Float
+    let padding: Float // Padding to match memory layout in Metal
 } 

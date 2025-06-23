@@ -5,13 +5,14 @@ struct alignas(16) PeakDetectionParams {
     uint neighborhoodSize;  // 8 or 16 neighbors
     float minDistance;      // Minimum distance between peaks
     uint maxPeaks;          // Maximum number of peaks to detect
-    float padding;          // Padding for 16-byte alignment
+    float threshold;        // Minimum intensity for a peak (0.0 - 1.0)
 };
 
 struct DetectedPeakData {
     float x;
     float y;
     float value;
+    float padding; // Padding for 16-byte alignment
 };
 
 kernel void peakDetection(
@@ -30,6 +31,12 @@ kernel void peakDetection(
     // Read center pixel and convert to grayscale intensity
     uint4 centerColor = inputTexture.read(gid);
     float centerIntensity = (float(centerColor.r) + float(centerColor.g) + float(centerColor.b)) / (3.0 * 255.0);
+    
+    // Early exit if below threshold
+    if (centerIntensity < params.threshold) {
+        outputTexture.write(centerColor, gid);
+        return;
+    }
     
     // Determine neighborhood size
     int neighborhoodRadius = (params.neighborhoodSize == 8) ? 1 : 2;
@@ -74,7 +81,7 @@ kernel void peakDetection(
             // Store peak data
             peakBuffer[currentCount].x = float(gid.x);
             peakBuffer[currentCount].y = float(gid.y);
-            peakBuffer[currentCount].value = centerIntensity;
+            peakBuffer[currentCount].value = centerIntensity * 255.0; // Scale back to 0-255 range
         }
         
         // Highlight peak in red for visualization
