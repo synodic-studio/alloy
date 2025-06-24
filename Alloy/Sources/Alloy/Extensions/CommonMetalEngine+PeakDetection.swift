@@ -6,21 +6,21 @@ extension CommonMetalEngine {
     /// Apply peak detection to the current image and return coordinates
     /// - Parameters:
     ///   - data: Input image data
-    ///   - neighborhoodSize: Number of neighbors to check (8 or 16, default: 8)
+    ///   - neighborhoodSize: Side length of the square neighborhood to check (e.g., 3 for a 3x3 area). Must be an odd number.
     ///   - minDistance: Minimum distance between peaks (default: 5.0)
     ///   - maxPeaks: Maximum number of peaks to detect (default: 100)
     ///   - threshold: Minimum intensity threshold for peak detection (0.0-1.0, default: 0.5)
     /// - Returns: Array of detected peak coordinates
     public func detectPeaks(
         data: Data,
-        neighborhoodSize: Int = 8,
+        neighborhoodSize: Int = 3,
         minDistance: Double = 5.0,
         maxPeaks: Int = 100,
         threshold: Double = 0.5
     ) throws -> [DetectedPeak] {
         // Validate parameters
-        guard neighborhoodSize == 8 || neighborhoodSize == 16 else {
-            throw MetalEngineError.generalError(message: "Neighborhood size must be 8 or 16")
+        guard neighborhoodSize >= 3 && neighborhoodSize % 2 == 1 else {
+            throw MetalEngineError.generalError(message: "Neighborhood size must be an odd integer >= 3")
         }
         
         guard minDistance > 0 else {
@@ -131,15 +131,15 @@ extension CommonMetalEngine {
     }
     
     /// Apply peak detection to the current image (visualization only)
-    /// - Parameter neighborhoodSize: Number of neighbors to check (8 or 16, default: 8)
+    /// - Parameter neighborhoodSize: Side length of the square neighborhood to check (e.g., 3 for a 3x3 area). Must be an odd number.
     /// - Returns: CommonMetalEngine for chaining
     public func peakDetection(
-        neighborhoodSize: Int = 8,
+        neighborhoodSize: Int = 3,
         threshold: Double = 0.5
     ) throws -> CommonMetalEngine {
         // Validate parameters
-        guard neighborhoodSize == 8 || neighborhoodSize == 16 else {
-            throw MetalEngineError.generalError(message: "Neighborhood size must be 8 or 16")
+        guard neighborhoodSize >= 3 && neighborhoodSize % 2 == 1 else {
+            throw MetalEngineError.generalError(message: "Neighborhood size must be an odd integer >= 3")
         }
         
         guard threshold >= 0.0 && threshold <= 1.0 else {
@@ -198,21 +198,21 @@ extension CommonMetalEngine {
     /// Apply peak detection to the current image and return both regular result and detected peaks
     /// - Parameters:
     ///   - data: Input image data
-    ///   - neighborhoodSize: Number of neighbors to check (8 or 16, default: 8)
+    ///   - neighborhoodSize: Side length of the square neighborhood to check (e.g., 3 for a 3x3 area). Must be an odd number.
     ///   - minDistance: Minimum distance between peaks (default: 5.0)
     ///   - maxPeaks: Maximum number of peaks to detect (default: 100)
     ///   - threshold: Minimum intensity threshold for peak detection (0.0-1.0, default: 0.5)
     /// - Returns: PeakDetectionResult containing detected peaks and processed texture
     public func executeWithPeakDetection(
         data: Data,
-        neighborhoodSize: Int = 8,
+        neighborhoodSize: Int = 3,
         minDistance: Double = 5.0,
         maxPeaks: Int = 100,
         threshold: Double = 0.5
     ) throws -> PeakDetectionResult {
         // Validate parameters
-        guard neighborhoodSize == 8 || neighborhoodSize == 16 else {
-            throw MetalEngineError.generalError(message: "Neighborhood size must be 8 or 16")
+        guard neighborhoodSize >= 3 && neighborhoodSize % 2 == 1 else {
+            throw MetalEngineError.generalError(message: "Neighborhood size must be an odd integer >= 3")
         }
         
         guard minDistance > 0 else {

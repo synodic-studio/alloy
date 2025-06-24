@@ -2,7 +2,7 @@
 using namespace metal;
 
 struct alignas(16) PeakDetectionParams {
-    uint neighborhoodSize;  // 8 or 16 neighbors
+    uint neighborhoodSize;  // Side length of the square neighborhood (e.g., 3 for 3x3)
     float minDistance;      // Minimum distance between peaks
     uint maxPeaks;          // Maximum number of peaks to detect
     float threshold;        // Minimum intensity for a peak (0.0 - 1.0)
@@ -39,7 +39,7 @@ kernel void peakDetection(
     }
     
     // Determine neighborhood size
-    int neighborhoodRadius = (params.neighborhoodSize == 8) ? 1 : 2;
+    int neighborhoodRadius = (params.neighborhoodSize - 1) / 2;
     
     bool isPeak = true;
     float maxNeighborValue = 0.0;

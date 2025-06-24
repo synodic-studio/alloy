@@ -17,7 +17,7 @@ struct PeakDetectionPreview: View {
     
     // MARK: - State
     
-    @State private var neighborhoodSize: Int = 8
+    @State private var neighborhoodSize: Double = 3.0
     @State private var minDistance: Double = 3.0
     @State private var maxPeaks: Double = 20.0
     @State private var threshold: Double = 0.5
@@ -47,7 +47,7 @@ struct PeakDetectionPreview: View {
     // MARK: - Image Views
     
     private var imageComparison: some View {
-        HStack(spacing: 20) {
+        VStack(spacing: 20) {
             imageDisplay(title: "Original", image: originalImage)
             imageDisplay(
                 title: "Processed (\(detectedPeaks.count) peaks)",
@@ -122,11 +122,13 @@ struct PeakDetectionPreview: View {
             controlSlider(label: "Min Distance", value: $minDistance, range: 1...20, step: 1)
             controlSlider(label: "Max Peaks", value: $maxPeaks, range: 1...100, step: 1)
 
-            Picker("Neighborhood:", selection: $neighborhoodSize) {
-                Text("8 neighbors").tag(8)
-                Text("16 neighbors").tag(16)
+            HStack {
+                Text("Neighborhood")
+                    .frame(width: 100, alignment: .leading)
+                Slider(value: $neighborhoodSize, in: 3...25, step: 2)
+                Text(String(format: "%.0f", neighborhoodSize))
+                    .frame(width: 50)
             }
-            .pickerStyle(.segmented)
         }
         .padding()
         .frame(maxWidth: 400)
@@ -221,7 +223,7 @@ struct PeakDetectionPreview: View {
                 guard let imageEngine = CommonMetalEngine() else { return }
                 let imageResult = try imageEngine
                     .withRGBAData(width: width, height: height)
-                    .peakDetection(neighborhoodSize: neighborhoodSize, threshold: threshold)
+                    .peakDetection(neighborhoodSize: Int(neighborhoodSize), threshold: threshold)
                     .execute(data: data)
                 let finalImage = imageResult.texture.toNSImage(width: imageResult.width, height: imageResult.height)
 
@@ -231,7 +233,7 @@ struct PeakDetectionPreview: View {
                     .withRGBAData(width: width, height: height)
                     .detectPeaks(
                         data: data,
-                        neighborhoodSize: neighborhoodSize,
+                        neighborhoodSize: Int(neighborhoodSize),
                         minDistance: minDistance,
                         maxPeaks: Int(maxPeaks),
                         threshold: threshold

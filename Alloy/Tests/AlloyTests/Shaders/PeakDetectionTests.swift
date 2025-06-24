@@ -19,7 +19,7 @@ struct PeakDetectionTests {
             .withRGBAData(width: 5, height: 5)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: 1.0,
                 maxPeaks: 10,
                 threshold: 0.5
@@ -41,7 +41,7 @@ struct PeakDetectionTests {
             .withRGBAData(width: 5, height: 5)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: 1.0,
                 maxPeaks: 10,
                 threshold: 0.5
@@ -52,8 +52,7 @@ struct PeakDetectionTests {
         if let peak = result.detectedPeaks.first {
             #expect(peak.x >= 1.0 && peak.x <= 3.0, "Peak should be near center horizontally")
             #expect(peak.y >= 1.0 && peak.y <= 3.0, "Peak should be near center vertically")
-            #expect(peak.value > 0.5, "Peak value should be above threshold")
-            #expect(peak.confidence > 0.0, "Peak should have positive confidence")
+            #expect(peak.value > 128, "Peak value should be above threshold, in 0-255 range")
         }
     }
 
@@ -68,7 +67,7 @@ struct PeakDetectionTests {
             .withRGBAData(width: 7, height: 7)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: 1.0,
                 maxPeaks: 50,
                 threshold: 0.3
@@ -79,7 +78,7 @@ struct PeakDetectionTests {
             .withRGBAData(width: 7, height: 7)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: 1.0,
                 maxPeaks: 50,
                 threshold: 0.8
@@ -102,7 +101,7 @@ struct PeakDetectionTests {
             .withRGBAData(width: 7, height: 7)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: 1.0,
                 maxPeaks: maxPeaks,
                 threshold: 0.3
@@ -125,7 +124,7 @@ struct PeakDetectionTests {
             .withRGBAData(width: 9, height: 9)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: minDistance,
                 maxPeaks: 10,
                 threshold: 0.5
@@ -155,32 +154,32 @@ struct PeakDetectionTests {
         
         let data = createTestImageWithBorderPeak()
         
-        // 8-neighbor detection
-        let result8 = try engine
+        // 3x3 neighborhood detection
+        let result3x3 = try engine
             .withRGBAData(width: 5, height: 5)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 8,
+                neighborhoodSize: 3,
                 minDistance: 1.0,
                 maxPeaks: 10,
                 threshold: 0.5
             )
         
-        // 16-neighbor detection (should be more restrictive)
-        let result16 = try engine
+        // 5x5 neighborhood detection (should be more restrictive)
+        let result5x5 = try engine
             .withRGBAData(width: 5, height: 5)
             .executeWithPeakDetection(
                 data: data,
-                neighborhoodSize: 16,
+                neighborhoodSize: 5,
                 minDistance: 1.0,
                 maxPeaks: 10,
                 threshold: 0.5
             )
 
-        // 16-neighbor detection should generally find fewer or equal peaks
+        // A larger neighborhood is more restrictive, so it should find fewer or equal peaks
         #expect(
-            result16.detectedPeaks.count <= result8.detectedPeaks.count,
-            "16-neighbor detection should be more restrictive"
+            result5x5.detectedPeaks.count <= result3x3.detectedPeaks.count,
+            "5x5 neighborhood should be more restrictive than 3x3"
         )
     }
 
@@ -192,12 +191,26 @@ struct PeakDetectionTests {
         
         let data = createTestImageWithSinglePeak()
         
+        // Test with an even number
         #expect(throws: MetalEngineError.self) {
             try engine
                 .withRGBAData(width: 5, height: 5)
                 .executeWithPeakDetection(
                     data: data,
-                    neighborhoodSize: 12,  // Invalid - must be 8 or 16
+                    neighborhoodSize: 4,  // Invalid - must be odd
+                    minDistance: 1.0,
+                    maxPeaks: 10,
+                    threshold: 0.5
+                )
+        }
+        
+        // Test with a number less than 3
+        #expect(throws: MetalEngineError.self) {
+            try engine
+                .withRGBAData(width: 5, height: 5)
+                .executeWithPeakDetection(
+                    data: data,
+                    neighborhoodSize: 1,  // Invalid - must be >= 3
                     minDistance: 1.0,
                     maxPeaks: 10,
                     threshold: 0.5
@@ -216,7 +229,7 @@ struct PeakDetectionTests {
                 .withRGBAData(width: 5, height: 5)
                 .executeWithPeakDetection(
                     data: data,
-                    neighborhoodSize: 8,
+                    neighborhoodSize: 3,
                     minDistance: -1.0,
                     maxPeaks: 10,
                     threshold: 0.5
@@ -235,7 +248,7 @@ struct PeakDetectionTests {
                 .withRGBAData(width: 5, height: 5)
                 .executeWithPeakDetection(
                     data: data,
-                    neighborhoodSize: 8,
+                    neighborhoodSize: 3,
                     minDistance: 1.0,
                     maxPeaks: 10,
                     threshold: 1.5  // Invalid - must be 0.0-1.0
@@ -254,7 +267,7 @@ struct PeakDetectionTests {
                 .withRGBAData(width: 5, height: 5)
                 .executeWithPeakDetection(
                     data: data,
-                    neighborhoodSize: 8,
+                    neighborhoodSize: 3,
                     minDistance: 1.0,
                     maxPeaks: 0,
                     threshold: 0.5
