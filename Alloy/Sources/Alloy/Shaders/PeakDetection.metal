@@ -63,8 +63,10 @@ kernel void peakDetection(
                 maxNeighborValue = max(maxNeighborValue, neighborIntensity);
                 validNeighbors++;
                 
-                // If any neighbor is greater than or equal to center, it's not a peak
-                if (neighborIntensity >= centerIntensity) {
+                // If any neighbor is strictly greater than center, it's not a peak.
+                // Using `>` allows for ties, where a pixel is a peak if it's
+                // greater than or equal to all its neighbors.
+                if (neighborIntensity > centerIntensity) {
                     isPeak = false;
                 }
             }
