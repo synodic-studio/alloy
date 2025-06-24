@@ -23,9 +23,9 @@ struct FullPipelinePreview: View {
     @State private var blurRadius: Double = 10.0
 
     // Peak Detection
-    @State private var peakThreshold: Double = 0.1
-    @State private var neighborhoodSize: Int = 8
-    @State private var minDistance: Double = 10.0
+    @State private var peakThreshold: Double = 0.5
+    @State private var neighborhoodSize: Double = 3.0
+    @State private var minDistance: Double = 3.0
     @State private var maxPeaks: Double = 20.0
 
     // Results
@@ -63,7 +63,7 @@ struct FullPipelinePreview: View {
     // MARK: - Image Views
 
     private var imageComparison: some View {
-        VStack(spacing: 20) {
+        HStack(spacing: 20) {
             imageDisplay(title: "Original", image: originalImage)
             imageDisplay(
                 title: "Processed (\(detectedPeaks.count) peaks)",
@@ -170,10 +170,11 @@ struct FullPipelinePreview: View {
     // MARK: - Controls
 
     private var controls: some View {
-        VStack {
+        ScrollView {
             controlsContent
         }
         .frame(maxWidth: 400)
+        .frame(height: 1000)
         .monospacedDigit()
     }
 
@@ -221,11 +222,13 @@ struct FullPipelinePreview: View {
                 controlSlider(label: "Threshold", value: $peakThreshold, range: 0.0...1.0, step: 0.05)
                 controlSlider(label: "Min Distance", value: $minDistance, range: 1...20, step: 1)
                 controlSlider(label: "Max Peaks", value: $maxPeaks, range: 1...100, step: 1)
-                Picker("Neighborhood:", selection: $neighborhoodSize) {
-                    Text("8 neighbors").tag(8)
-                    Text("16 neighbors").tag(16)
+                HStack {
+                    Text("Neighborhood")
+                        .frame(width: 100, alignment: .leading)
+                    Slider(value: $neighborhoodSize, in: 3...25, step: 2)
+                    Text(String(format: "%.0f", neighborhoodSize))
+                        .frame(width: 50)
                 }
-                .pickerStyle(.segmented)
             }
         }
         .padding()
@@ -286,7 +289,7 @@ struct FullPipelinePreview: View {
                     .withRGBAData(width: width, height: height)
                     .detectPeaks(
                         data: processedData,
-                        neighborhoodSize: neighborhoodSize,
+                        neighborhoodSize: Int(neighborhoodSize),
                         minDistance: minDistance,
                         maxPeaks: Int(maxPeaks),
                         threshold: peakThreshold
