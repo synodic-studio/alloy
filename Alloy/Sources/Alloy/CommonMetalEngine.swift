@@ -261,6 +261,14 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                     params: typedOp.params,
                     threadgroupSize: typedOp.threadgroupSize
                 )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<ConnectedComponentsParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize
+                )
             } else {
                 throw MetalEngineError.generalError(message: "Unsupported operation type")
             }
@@ -350,5 +358,17 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     
     internal var hasOperations: Bool {
         return !operations.isEmpty
+    }
+    
+    /// Execute all pending operations and return the result
+    internal func executeOperations() throws -> BaseShaderResult {
+        guard !operations.isEmpty else {
+            throw MetalEngineError.generalError(message: "No operations to execute")
+        }
+        
+        // For this method, we need to execute with empty data since we're working with textures
+        // This assumes the operations have already been configured with proper input textures
+        let dummyData = Data()
+        return try execute(data: dummyData)
     }
 }

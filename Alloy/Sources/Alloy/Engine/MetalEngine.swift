@@ -19,7 +19,8 @@ public class MetalEngine: @unchecked Sendable {
         "erosion": "Erosion",
         "blur": "Blur",
         "noise": "Noise",
-        "peakDetection": "PeakDetection"
+        "peakDetection": "PeakDetection",
+        "connectedComponents": "ConnectedComponents"
     ]
     
     private let shaderMap: [String: String] = [
