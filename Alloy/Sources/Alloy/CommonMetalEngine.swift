@@ -61,10 +61,10 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
     
     /// Execute the configured pipeline with new input data
     public func execute(data: Data) throws -> BaseShaderResult {
-        guard !operations.isEmpty else {
-            throw MetalEngineError.generalError(message: "No operations to execute")
-        }
-        
+//        guard !operations.isEmpty else {
+//            throw MetalEngineError.generalError(message: "No operations to execute")
+//        }
+//        
         // Create input texture based on data type
         let inputTexture: MTLTexture
         if isRGBAInput {
