@@ -3,7 +3,7 @@ import AppKit
 
 extension MTLTexture {
     /// Convert MTLTexture to NSImage
-    func toNSImage(width: Int, height: Int) -> NSImage? {
+    public func toNSImage(width: Int, height: Int) -> NSImage? {
         guard self.pixelFormat == .rgba8Unorm || self.pixelFormat == .rgba8Uint else {
             print("Unsupported texture format for NSImage conversion")
             return nil
@@ -39,7 +39,7 @@ extension MTLTexture {
     }
     
     /// Convert MTLTexture to RGBA Data
-    func toRGBAData() -> Data? {
+    public func toRGBAData() -> Data? {
         guard self.pixelFormat == .rgba8Unorm || self.pixelFormat == .rgba8Uint else {
             print("Unsupported texture format for RGBA data conversion")
             return nil

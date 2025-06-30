@@ -9,7 +9,7 @@ extension CommonMetalEngine {
     ///   - maxComponents: Maximum number of components to detect (default: 1000)
     ///   - maxPixelsPerBlob: Maximum pixels per blob - larger blobs are ignored (default: 100)
     /// - Returns: CommonMetalEngine for chaining
-    public func connectedComponents(maxComponents: Int = 1000, maxPixelsPerBlob: Int = 100) throws -> CommonMetalEngine {
+    public func connectedComponents(maxComponents: Int = 50, maxPixelsPerBlob: Int = 100) throws -> CommonMetalEngine {
         // Validate parameters
         guard maxComponents > 0 && maxComponents <= 10000 else {
             throw MetalEngineError.generalError(message: "maxComponents must be between 1 and 10000")
@@ -70,7 +70,7 @@ extension CommonMetalEngine {
     ///   - maxComponents: Maximum number of components to detect  
     ///   - maxPixelsPerBlob: Maximum pixels per blob
     /// - Returns: ConnectedComponentsResult containing processed texture and detected centroids
-    public func executeConnectedComponents(data: Data, maxComponents: Int = 1000, maxPixelsPerBlob: Int = 100) throws -> ConnectedComponentsResult {
+    public func executeConnectedComponents(data: Data, maxComponents: Int = 50, maxPixelsPerBlob: Int = 100) throws -> ConnectedComponentsResult {
         // Validate that engine has been configured with dimensions
         guard inputWidth > 0 && inputHeight > 0 else {
             throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions.")

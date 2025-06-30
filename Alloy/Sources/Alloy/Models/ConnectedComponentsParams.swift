@@ -11,7 +11,7 @@ struct ConnectedComponentsParams: MetalShaderParameters {
     
     var bufferIndex: Int { 0 }
     
-    init(maxComponents: Int = 1000, maxPixelsPerBlob: Int = 100, searchWindowSize: Int = 80) {
+    init(maxComponents: Int = 50, maxPixelsPerBlob: Int = 100, searchWindowSize: Int = 20) {
         self.maxComponents = UInt32(maxComponents)
         self.maxPixelsPerBlob = UInt32(maxPixelsPerBlob)
         self.searchWindowSize = UInt32(searchWindowSize)
