@@ -35,7 +35,7 @@ kernel void donutMask(
         // Between inner and outer radius - keep original color with full alpha
         outputTexture.write(uint4(inputColor[0], inputColor[1], inputColor[2], 255), gid);
     } else {
-        // Inside inner circle or outside outer circle - make transparent
-        outputTexture.write(uint4(inputColor[0], inputColor[1], inputColor[2], 0), gid);
+        // Inside inner circle or outside outer circle - set to black and transparent
+        outputTexture.write(uint4(0, 0, 0, 0), gid);
     }
 } 
