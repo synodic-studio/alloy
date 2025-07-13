@@ -2,7 +2,7 @@
 using namespace metal;
 
 struct alignas(16) GrayscaleParams {
-    uint strategy;        // Conversion strategy (0-6)
+    uint strategy;        // Conversion strategy (0-7)
     float blackThreshold; // Black threshold for contrast adjustment
     float whiteThreshold; // White threshold for contrast adjustment
 };
@@ -13,8 +13,9 @@ constant uint STRATEGY_AVERAGE = 1;       // (R + G + B) / 3
 constant uint STRATEGY_RED_CHANNEL = 2;   // Use red channel only
 constant uint STRATEGY_GREEN_CHANNEL = 3; // Use green channel only
 constant uint STRATEGY_BLUE_CHANNEL = 4;  // Use blue channel only
-constant uint STRATEGY_MAX_CHANNEL = 5;   // Use brightest channel
+constant uint STRATEGY_MAX_CHANNEL = 5;   // Use brightest channel (RGB)
 constant uint STRATEGY_MIN_CHANNEL = 6;   // Use darkest channel
+constant uint STRATEGY_MAX_CHANNEL_RG = 7; // Use brightest channel (R/G only, ignore blue)
 
 float adjustLevels(float black, float white, float value) {
     // Apply black threshold
@@ -49,6 +50,8 @@ float convertToGrayscale(float4 rgba, uint strategy) {
             return max(r, max(g, b));
         case STRATEGY_MIN_CHANNEL:
             return min(r, min(g, b));
+        case STRATEGY_MAX_CHANNEL_RG:
+            return max(r, g); // Max of red and green only, ignore blue
         default:
             return (r + g + b) / 3.0; // Default to average
     }

@@ -194,20 +194,17 @@ struct PipelineErosionConnected: View {
         do {
             guard let engine = CommonMetalEngine() else { return nil }
             
-            // First apply erosion
+            // Apply erosion first
             let erosionResult = try engine
                 .withRGBAData(width: width, height: height)
                 .erosion(iterations: Int(erosionIterations), connectivity: connectivity)
                 .execute(data: data)
             
-            // Convert result back to data for connected components analysis
-            guard let erodedData = erosionResult.texture.toRGBAData() else { return nil }
-            
-            // Now apply connected components analysis
+            // Now apply connected components analysis directly with the texture
             guard let connectedEngine = CommonMetalEngine() else { return nil }
             let connectedResult = try connectedEngine
                 .withRGBAData(width: width, height: height)
-                .executeConnectedComponents(data: erodedData, maxComponents: Int(maxComponents), maxPixelsPerBlob: Int(maxPixelsPerBlob))
+                .executeConnectedComponentsWithTexture(inputTexture: erosionResult.texture, maxComponents: Int(maxComponents), maxPixelsPerBlob: Int(maxPixelsPerBlob))
             
             // Update detected centroids
             DispatchQueue.main.async {

@@ -63,6 +63,87 @@ extension CommonMetalEngine {
         return self
     }
     
+    /// Execute connected components analysis with a texture input to avoid GPU-CPU roundtrip
+    /// - Parameters:
+    ///   - inputTexture: Input texture from previous GPU operation
+    ///   - maxComponents: Maximum number of components to detect  
+    ///   - maxPixelsPerBlob: Maximum pixels per blob
+    /// - Returns: ConnectedComponentsResult containing processed texture and detected centroids
+    public func executeConnectedComponentsWithTexture(inputTexture: MTLTexture, maxComponents: Int = 50, maxPixelsPerBlob: Int = 100) throws -> ConnectedComponentsResult {
+        // Create output texture
+        let outputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba8Uint,
+            width: inputTexture.width,
+            height: inputTexture.height,
+            mipmapped: false
+        )
+        outputDescriptor.usage = [.shaderWrite, .shaderRead]
+        outputDescriptor.storageMode = .shared
+        
+        guard let outputTexture = device.makeTexture(descriptor: outputDescriptor) else {
+            throw MetalEngineError.textureCreationFailed
+        }
+        
+        // Create buffers for component data
+        let componentBufferLength = maxComponents * MemoryLayout<ComponentData>.size
+        guard let componentBuffer = device.makeBuffer(
+            length: componentBufferLength,
+            options: .storageModeShared
+        ) else {
+            throw MetalEngineError.generalError(message: "Failed to create component buffer")
+        }
+        
+        // Create buffer for component count
+        guard let countBuffer = device.makeBuffer(
+            length: MemoryLayout<UInt32>.size,
+            options: .storageModeShared
+        ) else {
+            throw MetalEngineError.generalError(message: "Failed to create count buffer")
+        }
+        
+        // Initialize count to 0
+        let countPointer = countBuffer.contents().bindMemory(to: UInt32.self, capacity: 1)
+        countPointer[0] = 0
+        
+        // Execute the connected components shader with buffers
+        try executeConnectedComponentsShader(
+            inputTexture: inputTexture,
+            outputTexture: outputTexture,
+            componentBuffer: componentBuffer,
+            countBuffer: countBuffer,
+            maxComponents: maxComponents,
+            maxPixelsPerBlob: maxPixelsPerBlob
+        )
+        
+        // Read back results
+        let detectedCount = Int(countPointer[0])
+        var centroids: [ComponentCentroid] = []
+        
+        if detectedCount > 0 {
+            let componentPointer = componentBuffer.contents().bindMemory(
+                to: ComponentData.self,
+                capacity: maxComponents
+            )
+            
+            for i in 0..<min(detectedCount, maxComponents) {
+                let componentData = componentPointer[i]
+                let centroid = ComponentCentroid(
+                    x: componentData.centroidX,
+                    y: componentData.centroidY,
+                    pixelCount: componentData.pixelCount
+                )
+                centroids.append(centroid)
+            }
+        }
+        
+        return ConnectedComponentsResult(
+            texture: outputTexture,
+            width: inputTexture.width,
+            height: inputTexture.height,
+            centroids: centroids
+        )
+    }
+    
     /// Execute connected components analysis and return both texture and centroid data
     /// This is a direct method that bypasses the standard pipeline for special buffer operations
     /// - Parameters:

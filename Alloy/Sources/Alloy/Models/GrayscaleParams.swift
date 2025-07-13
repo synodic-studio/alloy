@@ -20,15 +20,7 @@ struct GrayscaleParams: MetalShaderParameters {
 
 extension GrayscaleConversionStrategy {
     /// Metal shader strategy constants
-    var metalValue: UInt32 {
-        switch self {
-        case .weighted:     return 0
-        case .average:      return 1
-        case .redChannel:   return 2
-        case .greenChannel: return 3
-        case .blueChannel:  return 4
-        case .maxChannel:   return 5
-        case .minChannel:   return 6
-        }
+    public var metalValue: UInt32 {
+        return UInt32(self.rawValue)
     }
 } 

@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "Alloy",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
         .library(
@@ -22,7 +22,7 @@ let package = Package(
             name: "Alloy",
             dependencies: [],
             resources: [
-                .copy("Shaders")
+                .copy("Shaders"),
             ]
         ),
         .testTarget(
@@ -30,4 +30,4 @@ let package = Package(
             dependencies: ["Alloy"]
         ),
     ]
-) 
+)
