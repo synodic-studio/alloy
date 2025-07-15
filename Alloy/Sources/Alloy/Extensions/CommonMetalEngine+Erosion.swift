@@ -10,6 +10,8 @@ extension CommonMetalEngine {
     ///   - connectivity: Connectivity type (4-connected or 8-connected)
     /// - Returns: CommonMetalEngine for chaining
     public func erosion(iterations: Int = 1, connectivity: ErosionConnectivity = .eight) throws -> CommonMetalEngine {
+        // TODO: Allow iterations = 0 as a no-op pass-through for UI flexibility
+        // Currently requires 1-20, but 0 could be useful for disabling erosion
         // Validate parameters
         guard iterations >= 1 && iterations <= 20 else {
             throw MetalEngineError.generalError(message: "Iterations must be between 1 and 20")

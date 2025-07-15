@@ -105,3 +105,10 @@ Each shader operation has a corresponding parameter struct conforming to `MetalS
 ### Error Handling
 
 Use `MetalEngineError` for Metal-specific errors. All operations can throw, particularly during shader compilation and execution phases.
+
+## TODOs
+
+### Erosion Shader Enhancement
+- Allow `iterations = 0` as a no-op pass-through for UI flexibility
+- Currently requires 1-20, but 0 could be useful for disabling erosion in UI without rebuilding pipeline
+- See: `/Sources/Alloy/Extensions/CommonMetalEngine+Erosion.swift:13-14`
