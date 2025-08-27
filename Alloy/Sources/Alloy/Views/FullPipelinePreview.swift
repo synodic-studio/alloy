@@ -1,8 +1,7 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct FullPipelinePreview: View {
-
     // MARK: - State
 
     // Erosion
@@ -19,7 +18,7 @@ struct FullPipelinePreview: View {
     @State private var ignoreBlack: Bool = false
     @State private var ignoreWhite: Bool = false
 
-    // Blur
+    /// Blur
     @State private var blurRadius: Double = 10.0
 
     // Peak Detection
@@ -68,7 +67,7 @@ struct FullPipelinePreview: View {
             imageDisplay(
                 title: "Processed (\(detectedPeaks.count) peaks)",
                 image: processedImage,
-                showPeaks: true
+                showPeaks: true,
             )
         }
     }
@@ -82,7 +81,7 @@ struct FullPipelinePreview: View {
             Text(title)
                 .font(.headline)
 
-            if let image = image {
+            if let image {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.none)
@@ -115,7 +114,7 @@ struct FullPipelinePreview: View {
             if let processedCGImage = self.processedImage?.cgImage(
                 forProposedRect: nil,
                 context: nil,
-                hints: nil
+                hints: nil,
             ) {
                 let imagePixelWidth = CGFloat(processedCGImage.width)
                 let imagePixelHeight = CGFloat(processedCGImage.height)
@@ -144,24 +143,23 @@ struct FullPipelinePreview: View {
         let sourceAspectRatio = sourceImageWidth / sourceImageHeight
         let viewAspectRatio = geometry.size.width / geometry.size.height
 
-        let renderedSize: CGSize
-        if sourceAspectRatio > viewAspectRatio {
+        let renderedSize = if sourceAspectRatio > viewAspectRatio {
             // Letterboxed (limited by width)
-            renderedSize = CGSize(
+            CGSize(
                 width: geometry.size.width,
-                height: geometry.size.width / sourceAspectRatio
+                height: geometry.size.width / sourceAspectRatio,
             )
         } else {
             // Pillarboxed (limited by height)
-            renderedSize = CGSize(
+            CGSize(
                 width: geometry.size.height * sourceAspectRatio,
-                height: geometry.size.height
+                height: geometry.size.height,
             )
         }
 
         let origin = CGPoint(
             x: (geometry.size.width - renderedSize.width) / 2,
-            y: (geometry.size.height - renderedSize.height) / 2
+            y: (geometry.size.height - renderedSize.height) / 2,
         )
 
         return CGRect(origin: origin, size: renderedSize)
@@ -182,15 +180,15 @@ struct FullPipelinePreview: View {
         VStack(alignment: .leading) {
             Group {
                 Text("Source Image").font(.headline)
-                controlSlider(label: "Capsule Radius", value: $capsuleRadius, range: 3...12, step: 1)
-                controlSlider(label: "Elongation", value: $elongationPerStep, range: 0...20, step: 1)
+                controlSlider(label: "Capsule Radius", value: $capsuleRadius, range: 3 ... 12, step: 1)
+                controlSlider(label: "Elongation", value: $elongationPerStep, range: 0 ... 20, step: 1)
             }
 
             Divider()
 
             Group {
                 Text("Erosion").font(.headline)
-                controlSlider(label: "Iterations", value: $erosionIterations, range: 1...20, step: 1)
+                controlSlider(label: "Iterations", value: $erosionIterations, range: 1 ... 20, step: 1)
                 Picker("Connectivity:", selection: $connectivity) {
                     ForEach(ErosionConnectivity.allCases, id: \.self) { connectivity in
                         Text(connectivity.displayName).tag(connectivity)
@@ -203,7 +201,7 @@ struct FullPipelinePreview: View {
 
             Group {
                 Text("Noise").font(.headline)
-                controlSlider(label: "Magnitude", value: $noiseMagnitude, range: 0...0.5, step: 0.01)
+                controlSlider(label: "Magnitude", value: $noiseMagnitude, range: 0 ... 0.5, step: 0.01)
                 Toggle("Ignore Black Pixels", isOn: $ignoreBlack)
                 Toggle("Ignore White Pixels", isOn: $ignoreWhite)
             }
@@ -212,20 +210,20 @@ struct FullPipelinePreview: View {
 
             Group {
                 Text("Blur").font(.headline)
-                controlSlider(label: "Radius", value: $blurRadius, range: 0.5...15.0, step: 0.1)
+                controlSlider(label: "Radius", value: $blurRadius, range: 0.5 ... 15.0, step: 0.1)
             }
 
             Divider()
 
             Group {
                 Text("Peak Detection").font(.headline)
-                controlSlider(label: "Threshold", value: $peakThreshold, range: 0.0...1.0, step: 0.05)
-                controlSlider(label: "Min Distance", value: $minDistance, range: 1...20, step: 1)
-                controlSlider(label: "Max Peaks", value: $maxPeaks, range: 1...100, step: 1)
+                controlSlider(label: "Threshold", value: $peakThreshold, range: 0.0 ... 1.0, step: 0.05)
+                controlSlider(label: "Min Distance", value: $minDistance, range: 1 ... 20, step: 1)
+                controlSlider(label: "Max Peaks", value: $maxPeaks, range: 1 ... 100, step: 1)
                 HStack {
                     Text("Neighborhood")
                         .frame(width: 100, alignment: .leading)
-                    Slider(value: $neighborhoodSize, in: 3...25, step: 2)
+                    Slider(value: $neighborhoodSize, in: 3 ... 25, step: 2)
                     Text(String(format: "%.0f", neighborhoodSize))
                         .frame(width: 50)
                 }
@@ -273,10 +271,10 @@ struct FullPipelinePreview: View {
                     .blur(radius: blurRadius)
                     .execute(data: data)
                 let finalImage = imageResult.texture.toNSImage(width: imageResult.width, height: imageResult.height)
-                
+
                 // Engine for detecting peaks
                 guard let processedData = finalImage?.rgbaData,
-                      let peakEngine = CommonMetalEngine() 
+                      let peakEngine = CommonMetalEngine()
                 else {
                     DispatchQueue.main.async {
                         self.detectedPeaks = []
@@ -292,7 +290,7 @@ struct FullPipelinePreview: View {
                         neighborhoodSize: Int(neighborhoodSize),
                         minDistance: minDistance,
                         maxPeaks: Int(maxPeaks),
-                        threshold: peakThreshold
+                        threshold: peakThreshold,
                     )
 
                 DispatchQueue.main.async {
@@ -310,7 +308,7 @@ struct FullPipelinePreview: View {
     }
 
     private func calculateElongation(for index: Int) -> Double {
-        return Double(index) * elongationPerStep
+        Double(index) * elongationPerStep
     }
 
     private func generateCapsulesImage() -> NSImage? {
@@ -339,7 +337,7 @@ struct FullPipelinePreview: View {
                 x: position.x - width / 2,
                 y: position.y - height / 2,
                 width: width,
-                height: height
+                height: height,
             )
             let cornerRadius = width / 2
             let capsulePath = NSBezierPath(roundedRect: capsuleRect, xRadius: cornerRadius, yRadius: cornerRadius)
@@ -353,7 +351,7 @@ struct FullPipelinePreview: View {
 
 // MARK: - NSImage Helper
 
-fileprivate extension NSImage {
+private extension NSImage {
     var rgbaData: Data {
         guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return Data() }
         let width = cgImage.width
@@ -369,11 +367,11 @@ fileprivate extension NSImage {
                 bitsPerComponent: 8,
                 bytesPerRow: bytesPerRow,
                 space: CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue,
             )
         }
 
-        guard let context = context else { return Data() }
+        guard let context else { return Data() }
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         return data
     }
@@ -381,4 +379,4 @@ fileprivate extension NSImage {
 
 #Preview {
     FullPipelinePreview()
-} 
+}

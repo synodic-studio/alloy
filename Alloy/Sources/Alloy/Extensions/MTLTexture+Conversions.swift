@@ -1,9 +1,9 @@
-import Metal
 import AppKit
+import Metal
 
-extension MTLTexture {
+public extension MTLTexture {
     /// Convert MTLTexture to NSImage
-    public func toNSImage(width: Int, height: Int) -> NSImage? {
+    func toNSImage(width: Int, height: Int) -> NSImage? {
         guard self.pixelFormat == .rgba8Unorm || self.pixelFormat == .rgba8Uint else {
             print("Unsupported texture format for NSImage conversion")
             return nil
@@ -18,7 +18,7 @@ extension MTLTexture {
             buffer,
             bytesPerRow: bytesPerRow,
             from: MTLRegionMake2D(0, 0, width, height),
-            mipmapLevel: 0
+            mipmapLevel: 0,
         )
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -31,15 +31,15 @@ extension MTLTexture {
             bitsPerComponent: 8,
             bytesPerRow: bytesPerRow,
             space: colorSpace,
-            bitmapInfo: bitmapInfo
+            bitmapInfo: bitmapInfo,
         ) else { return nil }
 
         guard let cgImage = context.makeImage() else { return nil }
         return NSImage(cgImage: cgImage, size: NSSize(width: width, height: height))
     }
-    
+
     /// Convert MTLTexture to RGBA Data
-    public func toRGBAData() -> Data? {
+    func toRGBAData() -> Data? {
         guard self.pixelFormat == .rgba8Unorm || self.pixelFormat == .rgba8Uint else {
             print("Unsupported texture format for RGBA data conversion")
             return nil
@@ -49,18 +49,18 @@ extension MTLTexture {
         let height = self.height
         let bytesPerRow = width * 4
         let dataLength = bytesPerRow * height
-        
+
         var data = Data(count: dataLength)
-        
+
         data.withUnsafeMutableBytes { ptr in
             self.getBytes(
                 ptr.baseAddress!,
                 bytesPerRow: bytesPerRow,
                 from: MTLRegionMake2D(0, 0, width, height),
-                mipmapLevel: 0
+                mipmapLevel: 0,
             )
         }
-        
+
         return data
     }
-} 
+}

@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct GrayscalePreview: View {
     @State private var strategy: GrayscaleConversionStrategy = .weighted
@@ -43,11 +43,11 @@ struct GrayscalePreview: View {
                     }
                 }
 
-                Slider(value: $blackThreshold, in: 0.0...1.0) {
+                Slider(value: $blackThreshold, in: 0.0 ... 1.0) {
                     Text("Black Threshold: \(blackThreshold, specifier: "%.2f")")
                 }
 
-                Slider(value: $whiteThreshold, in: 0.0...1.0) {
+                Slider(value: $whiteThreshold, in: 0.0 ... 1.0) {
                     Text("White Threshold: \(whiteThreshold, specifier: "%.2f")")
                 }
             }
@@ -69,7 +69,7 @@ struct GrayscalePreview: View {
     }
 
     private var originalImage: NSImage {
-        return Self.generateTestImage(size: NSSize(width: imageSize, height: imageSize))
+        Self.generateTestImage(size: NSSize(width: imageSize, height: imageSize))
     }
 
     private var grayscaleImage: NSImage? {
@@ -90,7 +90,7 @@ struct GrayscalePreview: View {
                 bitsPerComponent: 8,
                 bytesPerRow: bytesPerRow,
                 space: colorSpace,
-                bitmapInfo: bitmapInfo
+                bitmapInfo: bitmapInfo,
             )
         }
 
@@ -105,7 +105,7 @@ struct GrayscalePreview: View {
                 .grayscale(
                     strategy: strategy,
                     blackThreshold: blackThreshold,
-                    whiteThreshold: whiteThreshold
+                    whiteThreshold: whiteThreshold,
                 )
                 .executeToImage(data: data)
         } catch {
@@ -138,7 +138,7 @@ struct GrayscalePreview: View {
                 x: position.x - circleRadius,
                 y: position.y - circleRadius,
                 width: circleRadius * 2,
-                height: circleRadius * 2
+                height: circleRadius * 2,
             )
             colors[i].setFill()
             NSBezierPath(ovalIn: circleRect).fill()

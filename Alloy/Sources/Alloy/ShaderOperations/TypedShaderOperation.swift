@@ -7,14 +7,14 @@ struct TypedShaderOperation<P: MetalShaderParameters & Sendable>: ShaderOperatio
     let outputTexture: MTLTexture
     let params: P
     let threadgroupSize: MTLSize?
-    
+
     func setParameters(encoder: MTLComputeCommandEncoder) {
         withUnsafePointer(to: params) { pointer in
             encoder.setBytes(
                 pointer,
                 length: MemoryLayout<P>.size,
-                index: params.bufferIndex
+                index: params.bufferIndex,
             )
         }
     }
-} 
+}

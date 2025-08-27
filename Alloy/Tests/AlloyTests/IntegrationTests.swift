@@ -1,31 +1,30 @@
-import Testing
 import Foundation
+import Testing
 
 @testable import Alloy
 
 @Suite("Integration Tests")
 struct IntegrationTests {
-
     @Test("Chained Operations")
-    func testChainedOperations() throws {
+    func chainedOperations() throws {
         guard let engine = CommonMetalEngine() else {
             throw MetalEngineError.generalError(message: "Failed to create Metal engine")
         }
-        
+
         let rawWidth = 512
         let rawHeight = 512
         let testData = createMockRawData(width: rawWidth, height: rawHeight, bitDepth: 8)
-        
+
         // Configure pipeline
         let configuredEngine = try engine
             .withRawData(width: rawWidth, height: rawHeight)
             .debayerRGGB()
             .squareCrop(center: (x: 128, y: 128), sideLength: 200)
             .donutMask(innerRadius: 50)
-        
+
         // Execute with test data
         let result = try configuredEngine.execute(data: testData)
-        
+
         #expect(result.width == 200)
         #expect(result.height == 200)
     }

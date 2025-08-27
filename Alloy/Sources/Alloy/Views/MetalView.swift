@@ -4,9 +4,9 @@
 //
 //struct MetalView: View {
 //    typealias Operation = (MTLCommandBuffer, MTLTexture, MTLTexture) -> Void
-//    
+//
 //    let operation: Operation
-//    
+//
 //    var body: some View {
 //        MetalViewRepresentable(operation: operation)
 //    }
@@ -14,9 +14,9 @@
 //
 //private struct MetalViewRepresentable: UIViewRepresentable {
 //    typealias Operation = MetalView.Operation
-//    
+//
 //    let operation: Operation
-//    
+//
 //    func makeUIView(context: Context) -> MTKView {
 //        let view = MTKView()
 //        view.enableSetNeedsDisplay = true
@@ -25,25 +25,25 @@
 //        view.delegate = context.coordinator
 //        return view
 //    }
-//    
+//
 //    func updateUIView(_ uiView: MTKView, context: Context) {
 //        context.coordinator.operation = operation
 //        uiView.setNeedsDisplay()
 //    }
-//    
+//
 //    func makeCoordinator() -> Coordinator {
 //        Coordinator(operation: operation)
 //    }
-//    
+//
 //    class Coordinator: NSObject, MTKViewDelegate {
 //        var operation: Operation
-//        
+//
 //        init(operation: @escaping Operation) {
 //            self.operation = operation
 //        }
-//        
+//
 //        func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
-//        
+//
 //        func draw(in view: MTKView) {
 //            guard let device = view.device,
 //                  let commandBuffer = device.makeCommandQueue()?.makeCommandBuffer(),
@@ -57,9 +57,9 @@
 //                  let destinationTexture = device.makeTexture(descriptor: descriptor) else {
 //                return
 //            }
-//            
+//
 //            operation(commandBuffer, sourceTexture, destinationTexture)
-//            
+//
 //            if let blitEncoder = commandBuffer.makeBlitCommandEncoder() {
 //                blitEncoder.copy(
 //                    from: destinationTexture,
@@ -78,12 +78,12 @@
 //                )
 //                blitEncoder.endEncoding()
 //            }
-//            
+//
 //            if let drawable = view.currentDrawable {
 //                commandBuffer.present(drawable)
 //            }
-//            
+//
 //            commandBuffer.commit()
 //        }
 //    }
-//} 
+//}

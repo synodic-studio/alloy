@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct BlackAndWhitePreview: View {
     @State private var threshold: Double = 0.5
@@ -35,7 +35,7 @@ struct BlackAndWhitePreview: View {
             }
 
             Form {
-                Slider(value: $threshold, in: 0.0...1.0) {
+                Slider(value: $threshold, in: 0.0 ... 1.0) {
                     Text("Threshold: \(threshold, specifier: "%.2f")")
                 }
             }
@@ -47,7 +47,7 @@ struct BlackAndWhitePreview: View {
     }
 
     private var originalImage: NSImage {
-        return Self.generateTestImage(size: NSSize(width: imageSize, height: imageSize))
+        Self.generateTestImage(size: NSSize(width: imageSize, height: imageSize))
     }
 
     private var blackAndWhiteImage: NSImage? {
@@ -68,7 +68,7 @@ struct BlackAndWhitePreview: View {
                 bitsPerComponent: 8,
                 bytesPerRow: bytesPerRow,
                 space: colorSpace,
-                bitmapInfo: bitmapInfo
+                bitmapInfo: bitmapInfo,
             )
         }
 
@@ -104,4 +104,4 @@ struct BlackAndWhitePreview: View {
 
 #Preview {
     BlackAndWhitePreview()
-} 
+}

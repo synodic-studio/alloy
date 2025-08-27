@@ -5,4 +5,4 @@ public struct BaseShaderResult: MetalShaderResult {
     public let texture: MTLTexture
     public let width: Int
     public let height: Int
-} 
+}

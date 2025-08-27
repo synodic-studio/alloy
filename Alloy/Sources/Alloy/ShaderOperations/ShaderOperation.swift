@@ -7,4 +7,4 @@ protocol ShaderOperation {
     var outputTexture: MTLTexture { get }
     var threadgroupSize: MTLSize? { get }
     func setParameters(encoder: MTLComputeCommandEncoder)
-} 
+}

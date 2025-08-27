@@ -11,7 +11,7 @@ let package = Package(
     products: [
         .library(
             name: "Alloy",
-            targets: ["Alloy"]
+            targets: ["Alloy"],
         ),
     ],
     dependencies: [
@@ -23,11 +23,11 @@ let package = Package(
             dependencies: [],
             resources: [
                 .copy("Shaders"),
-            ]
+            ],
         ),
         .testTarget(
             name: "AlloyTests",
-            dependencies: ["Alloy"]
+            dependencies: ["Alloy"],
         ),
-    ]
+    ],
 )
