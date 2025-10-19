@@ -21,6 +21,7 @@ public class MetalEngine: @unchecked Sendable {
         "noise": "Noise",
         "peakDetection": "PeakDetection",
         "connectedComponents": "ConnectedComponents",
+        "sampleColors": "ColorSampling",
     ]
 
     var textureMap: [String: MTLTexture] = [:]
