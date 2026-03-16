@@ -30,14 +30,14 @@ struct EngineErrorTests {
     }
 
     @Test("No Operations Throws Error")
-    func noOperationsThrowsError() {
+    func noOperationsThrowsError() throws {
         guard let engine = CommonMetalEngine() else {
             #expect(Bool(false), "Failed to create Metal engine")
             return
         }
 
         let testData = Data(repeating: 128, count: 100 * 100) // 8-bit test data
-        let configuredEngine = try! engine.withRawData(width: 100, height: 100)
+        let configuredEngine = try engine.withRawData(width: 100, height: 100)
 
         #expect(throws: MetalEngineError.self) {
             _ = try configuredEngine.execute(data: testData)

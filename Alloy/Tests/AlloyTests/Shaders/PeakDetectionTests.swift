@@ -26,7 +26,6 @@ struct PeakDetectionTests {
 
         #expect(result.width == 5)
         #expect(result.height == 5)
-        #expect(result.detectedPeaks.count >= 0)
         #expect(result.detectedPeaks.count <= 10)
     }
 

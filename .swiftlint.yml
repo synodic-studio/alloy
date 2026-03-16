@@ -1,0 +1,42 @@
+# Alloy project SwiftLint configuration
+# Inherits shared rules from Developer-level config
+
+parent_config: ../.swiftlint.yml
+
+# Project-specific exclusions
+excluded:
+  - "**/build"
+  - "**/.build"
+  - "**/.swiftpm"
+  - "**/DerivedData"
+
+# ---------------------------------------------------------------------------
+# Alloy-specific overrides
+# Metal/GPU code has larger functions (pipeline setup, shader config).
+# Test files have large structs with many test methods.
+# Error thresholds set above current maximums to avoid breaking builds.
+# Warning thresholds set to guide incremental improvement.
+# ---------------------------------------------------------------------------
+
+function_body_length:
+  warning: 40
+  error: 200
+
+type_body_length:
+  warning: 150
+  error: 400
+
+file_length:
+  warning: 200
+  error: 550
+
+line_length:
+  warning: 120
+  error: 200
+  ignores_urls: true
+  ignores_function_declarations: true
+  ignores_comments: true
+
+cyclomatic_complexity:
+  warning: 10
+  error: 25
