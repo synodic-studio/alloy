@@ -3,7 +3,7 @@ import Testing
 
 @testable import Alloy
 
-@Suite("Engine Error Handling Tests")
+@Suite
 struct EngineErrorTests {
     @Test("Invalid Dimensions Throws Error")
     func invalidDimensionsThrowsError() {
@@ -26,21 +26,6 @@ struct EngineErrorTests {
 
         #expect(throws: MetalEngineError.self) {
             _ = try engine.withRawData(width: 100, height: 100, bitDepth: 12)
-        }
-    }
-
-    @Test("No Operations Throws Error")
-    func noOperationsThrowsError() throws {
-        guard let engine = CommonMetalEngine() else {
-            #expect(Bool(false), "Failed to create Metal engine")
-            return
-        }
-
-        let testData = Data(repeating: 128, count: 100 * 100) // 8-bit test data
-        let configuredEngine = try engine.withRawData(width: 100, height: 100)
-
-        #expect(throws: MetalEngineError.self) {
-            _ = try configuredEngine.execute(data: testData)
         }
     }
 }

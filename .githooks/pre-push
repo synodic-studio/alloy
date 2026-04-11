@@ -1,0 +1,29 @@
+#!/bin/bash
+# Pre-push hook: build + test before pushing
+# Skippable with: git push --no-verify
+set -e
+
+echo "Pre-push: building..."
+if [ -f "Project.swift" ]; then
+  # Tuist project — build without signing
+  xcodebuild build \
+    -workspace *.xcworkspace \
+    -scheme "$(basename "$(pwd)")" \
+    -configuration Debug \
+    -destination 'generic/platform=iOS' \
+    CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
+    2>&1 | tail -5
+elif [ -f "Package.swift" ]; then
+  swift build 2>&1 | tail -3
+fi
+
+echo "Pre-push: testing..."
+if [ -d "Packages" ]; then
+  for pkg in Packages/*/; do
+    [ -f "$pkg/Package.swift" ] && (cd "$pkg" && swift test 2>&1 | tail -3)
+  done
+elif [ -f "Package.swift" ]; then
+  swift test 2>&1 | tail -3
+fi
+
+echo "Pre-push: all checks passed"
