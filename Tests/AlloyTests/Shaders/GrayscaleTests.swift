@@ -163,6 +163,46 @@ struct GrayscaleTests {
         )
     }
 
+    // MARK: - Single-Point (Binary) Threshold
+
+    @Test("Metal single-point threshold below cutoff returns zero")
+    func metalSinglePointThresholdBelowCutoff() throws {
+        let inputPixel = Pixel(w: 0.4)
+
+        try assertGrayscaleConversion(
+            input: inputPixel.nsColor,
+            strategy: .average,
+            blackThreshold: 0.5,
+            whiteThreshold: 0.5,
+            expected: Pixel(w: 0.0),
+        )
+    }
+
+    @Test("Metal single-point threshold above cutoff returns one")
+    func metalSinglePointThresholdAtOrAboveCutoff() throws {
+        // Not testing the exact boundary (w == threshold): 8-bit texture
+        // quantization can round 0.5 down to 127/255 (≈0.498), which is a
+        // property of the texture format, not the threshold logic.
+        try assertGrayscaleConversion(
+            input: Pixel(w: 0.9).nsColor,
+            strategy: .average,
+            blackThreshold: 0.5,
+            whiteThreshold: 0.5,
+            expected: Pixel(w: 1.0),
+        )
+    }
+
+    @Test("Metal single-point threshold at 1.0 does not throw")
+    func metalSinglePointThresholdAtMax() throws {
+        try assertGrayscaleConversion(
+            input: Pixel(w: 1.0).nsColor,
+            strategy: .average,
+            blackThreshold: 1.0,
+            whiteThreshold: 1.0,
+            expected: Pixel(w: 1.0),
+        )
+    }
+
     // MARK: - Validation
 
     @Test("Metal engine validation throws for bad thresholds")
@@ -282,7 +322,7 @@ private struct Pixel: Equatable {
         r: UInt8,
         g: UInt8,
         b: UInt8,
-        a: UInt8 = 255
+        a: UInt8 = 255,
     ) {
         self.r = r
         self.g = g
@@ -294,7 +334,7 @@ private struct Pixel: Equatable {
         r: Double,
         g: Double,
         b: Double,
-        a: Double = 1.0
+        a: Double = 1.0,
     ) {
         self.r = UInt8(r * 255)
         self.g = UInt8(g * 255)
@@ -304,30 +344,30 @@ private struct Pixel: Equatable {
 
     init(
         w: UInt8,
-        a: UInt8 = 255
+        a: UInt8 = 255,
     ) {
-        self.r = w
-        self.g = w
-        self.b = w
+        r = w
+        g = w
+        b = w
         self.a = a
     }
 
     init(
         w: Double,
-        a: Double = 1.0
+        a: Double = 1.0,
     ) {
-        self.r = UInt8(w * 255)
-        self.g = UInt8(w * 255)
-        self.b = UInt8(w * 255)
+        r = UInt8(w * 255)
+        g = UInt8(w * 255)
+        b = UInt8(w * 255)
         self.a = UInt8(a * 255)
     }
 
     /// Checks if two pixels are approximately equal, within a given tolerance.
     func isApproximatelyEqual(to other: Pixel, tolerance: Int = 1) -> Bool {
-        abs(Int(self.r) - Int(other.r)) <= tolerance &&
-            abs(Int(self.g) - Int(other.g)) <= tolerance &&
-            abs(Int(self.b) - Int(other.b)) <= tolerance &&
-            abs(Int(self.a) - Int(other.a)) <= tolerance
+        abs(Int(r) - Int(other.r)) <= tolerance &&
+            abs(Int(g) - Int(other.g)) <= tolerance &&
+            abs(Int(b) - Int(other.b)) <= tolerance &&
+            abs(Int(a) - Int(other.a)) <= tolerance
     }
 }
 

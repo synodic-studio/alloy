@@ -18,14 +18,20 @@ constant uint STRATEGY_MIN_CHANNEL = 6;   // Use darkest channel
 constant uint STRATEGY_MAX_CHANNEL_RG = 7; // Use brightest channel (R/G only, ignore blue)
 
 float adjustLevels(float black, float white, float value) {
+    // Single-point threshold (black == white, e.g. a binary cutoff): no ramp
+    // to remap into, so do a hard step instead of dividing by zero.
+    if (white <= black) {
+        return value >= black ? 1.0 : 0.0;
+    }
+
     // Apply black threshold
     if (value < black) {
         return 0.0;
     }
-    
+
     // Apply white threshold (clamp)
     float clampedValue = min(value, white);
-    
+
     // Remap [black, white] to [0.0, 1.0]
     return (clampedValue - black) / (white - black);
 }

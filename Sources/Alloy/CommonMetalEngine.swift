@@ -29,12 +29,12 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
             throw MetalEngineError.generalError(message: "Bit depth must be 8 or 16")
         }
 
-        self.configuredWidth = width
-        self.configuredHeight = height
-        self.configuredBitDepth = bitDepth
-        self.currentWidth = width
-        self.currentHeight = height
-        self.isRGBAInput = false
+        configuredWidth = width
+        configuredHeight = height
+        configuredBitDepth = bitDepth
+        currentWidth = width
+        currentHeight = height
+        isRGBAInput = false
 
         return self
     }
@@ -46,15 +46,15 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
             throw MetalEngineError.generalError(message: "Width and height must be greater than 0")
         }
 
-        self.textureWidth = width
-        self.textureHeight = height
-        self.operations.removeAll()
-        self.configuredWidth = width
-        self.configuredHeight = height
-        self.configuredBitDepth = 8 // RGBA is always 8-bit per component
-        self.currentWidth = width
-        self.currentHeight = height
-        self.isRGBAInput = true
+        textureWidth = width
+        textureHeight = height
+        operations.removeAll()
+        configuredWidth = width
+        configuredHeight = height
+        configuredBitDepth = 8 // RGBA is always 8-bit per component
+        currentWidth = width
+        currentHeight = height
+        isRGBAInput = true
 
         return self
     }
@@ -254,14 +254,6 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                     threadgroupSize: typedOp.threadgroupSize,
                 )
             } else if let typedOp = operations[i] as? TypedShaderOperation<PeakDetectionParams> {
-                try executeShader(
-                    name: typedOp.name,
-                    inputTexture: typedOp.inputTexture,
-                    outputTexture: typedOp.outputTexture,
-                    params: typedOp.params,
-                    threadgroupSize: typedOp.threadgroupSize,
-                )
-            } else if let typedOp = operations[i] as? TypedShaderOperation<BinaryThresholdParams> {
                 try executeShader(
                     name: typedOp.name,
                     inputTexture: typedOp.inputTexture,

@@ -11,7 +11,7 @@ public extension CommonMetalEngine {
     func grayscale(
         strategy: GrayscaleConversionStrategy,
         blackThreshold: Double = 0.0,
-        whiteThreshold: Double = 1.0
+        whiteThreshold: Double = 1.0,
     ) throws -> CommonMetalEngine {
         // Validate parameters
         guard blackThreshold >= 0.0, blackThreshold <= 1.0 else {
@@ -22,8 +22,10 @@ public extension CommonMetalEngine {
             throw MetalEngineError.generalError(message: "White threshold must be between 0.0 and 1.0")
         }
 
-        guard blackThreshold < whiteThreshold else {
-            throw MetalEngineError.generalError(message: "Black threshold must be less than white threshold")
+        // Equal thresholds collapse the ramp into a hard binary cutoff
+        // (see adjustLevels in Grayscale.metal) rather than being invalid.
+        guard blackThreshold <= whiteThreshold else {
+            throw MetalEngineError.generalError(message: "Black threshold must not exceed white threshold")
         }
 
         // Validate that engine has been configured with dimensions
@@ -83,15 +85,12 @@ public extension CommonMetalEngine {
             throw MetalEngineError.generalError(message: "Threshold must be between 0.0 and 1.0")
         }
 
-        // For black and white conversion, we use the threshold as the black level
-        // and set white level just slightly above to create a sharp cutoff
-        let blackThreshold = threshold
-        let whiteThreshold = min(1.0, threshold + 0.001) // Small epsilon to ensure sharp transition
-
+        // Equal black/white thresholds collapse adjustLevels' ramp into a
+        // true hard binary cutoff — no epsilon needed.
         return try grayscale(
             strategy: .weighted, // Use standard luminance weights for best results
-            blackThreshold: blackThreshold,
-            whiteThreshold: whiteThreshold,
+            blackThreshold: threshold,
+            whiteThreshold: threshold,
         )
     }
 }

@@ -32,7 +32,6 @@ public class MetalEngine: @unchecked Sendable {
         "peakDetection": "PeakDetection",
         "connectedComponents": "ConnectedComponents",
         "sampleColors": "ColorSampling",
-        "binaryThreshold": "BinaryThreshold",
     ]
 
     var textureMap: [String: MTLTexture] = [:]
@@ -209,7 +208,7 @@ public class MetalEngine: @unchecked Sendable {
         inputTexture: MTLTexture,
         outputTexture: MTLTexture,
         params: P,
-        threadgroupSize: MTLSize? = nil
+        threadgroupSize: MTLSize? = nil,
     ) throws {
         let pipelineState = try initializePipeline(name: name)
 
@@ -260,7 +259,7 @@ public class MetalEngine: @unchecked Sendable {
     func calculateOptimalThreadgroupSize(
         pipelineState: MTLComputePipelineState,
         outputWidth _: Int,
-        outputHeight _: Int
+        outputHeight _: Int,
     ) -> MTLSize {
         let w = pipelineState.threadExecutionWidth
         let h = pipelineState.maxTotalThreadsPerThreadgroup / w
