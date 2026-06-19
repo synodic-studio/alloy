@@ -261,6 +261,14 @@ public class CommonMetalEngine: MetalEngine, @unchecked Sendable {
                     params: typedOp.params,
                     threadgroupSize: typedOp.threadgroupSize,
                 )
+            } else if let typedOp = operations[i] as? TypedShaderOperation<BinaryThresholdParams> {
+                try executeShader(
+                    name: typedOp.name,
+                    inputTexture: typedOp.inputTexture,
+                    outputTexture: typedOp.outputTexture,
+                    params: typedOp.params,
+                    threadgroupSize: typedOp.threadgroupSize,
+                )
             } else if let typedOp = operations[i] as? TypedShaderOperation<ConnectedComponentsParams> {
                 try executeShader(
                     name: typedOp.name,
