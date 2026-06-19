@@ -6,10 +6,20 @@ public class MetalEngine: @unchecked Sendable {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     var pipelineStates: [String: MTLComputePipelineState] = [:]
+    // The compiled Metal library is expensive to build from source (the
+    // Alloy bundle ships .metal resources, not a pre-compiled .metallib),
+    // so cache it once and share across all engine instances. The default
+    // Metal device is a singleton, so a single cache slot is sufficient.
+    // Without sharing, every CommonMetalEngine() init recompiled all 13
+    // shaders, which caused intermittent engine-creation failures under
+    // load. Pipeline states stay per-instance (cheap, and avoids
+    // cross-instance data races).
+    private static var sharedLibrary: MTLLibrary?
+    private static var libraryLock = NSLock()
     private var metalLibrary: MTLLibrary?
 
     /// Mapping from function names to their corresponding Metal files
-    private let functionToFileMapping: [String: String] = [
+    private static let functionToFileMapping: [String: String] = [
         "debayerKernelRGGB": "Debayer",
         "squareCrop": "SquareCrop",
         "donutMask": "DonutMask",
@@ -42,9 +52,10 @@ public class MetalEngine: @unchecked Sendable {
         }
         self.commandQueue = commandQueue
 
-        // Initialize Metal library
+        // Initialize Metal library (cached per-device so source
+        // compilation only happens once across all engine instances)
         do {
-            try initializeMetalLibrary()
+            metalLibrary = try Self.loadOrCompileLibrary(device: device)
         } catch {
             print("Failed to initialize Metal library: \(error)")
             return nil
@@ -52,16 +63,36 @@ public class MetalEngine: @unchecked Sendable {
     }
 
     deinit {
-        // Clear pipeline states
+        // pipelineStates is per-instance; nothing shared to clean up.
         pipelineStates.removeAll()
     }
 
-    /// Initialize the Metal library by loading all shader sources
-    private func initializeMetalLibrary() throws {
+    /// Load the cached Metal library for `device`, or compile it from the
+    /// bundled .metal sources on first use. The result is cached per-device
+    /// under a lock so subsequent CommonMetalEngine() inits skip the
+    /// expensive `makeLibrary(source:)` call.
+    private static func loadOrCompileLibrary(device: MTLDevice) throws -> MTLLibrary {
+        libraryLock.lock()
+        if let cached = sharedLibrary {
+            libraryLock.unlock()
+            return cached
+        }
+        libraryLock.unlock()
+
+        let library = try compileLibrary(device: device)
+
+        libraryLock.lock()
+        sharedLibrary = library
+        libraryLock.unlock()
+        return library
+    }
+
+    /// Compile the Metal library from the bundled .metal sources (or the
+    /// pre-compiled default library if present).
+    private static func compileLibrary(device: MTLDevice) throws -> MTLLibrary {
         // Try to load the pre-compiled library from the bundle first
         do {
-            metalLibrary = try device.makeDefaultLibrary(bundle: Bundle.module)
-            return
+            return try device.makeDefaultLibrary(bundle: Bundle.module)
         } catch {
             // This is expected to fail in some environments, so we'll try other methods.
             // Only log at debug level to reduce console spam
@@ -72,8 +103,7 @@ public class MetalEngine: @unchecked Sendable {
 
         // If that fails, try to get the default system library
         if let defaultLibrary = device.makeDefaultLibrary() {
-            metalLibrary = defaultLibrary
-            return
+            return defaultLibrary
         }
 
         // As a last resort, load and compile from source code
@@ -82,7 +112,7 @@ public class MetalEngine: @unchecked Sendable {
         #endif
         var combinedSource = "#include <metal_stdlib>\nusing namespace metal;\n\n"
 
-        for fileName in functionToFileMapping.values {
+        for fileName in Self.functionToFileMapping.values {
             guard let shaderURL = Bundle.module.url(forResource: "Shaders/\(fileName)", withExtension: "metal") else {
                 throw MetalEngineError.generalError(message: "Failed to find Metal shader source file in bundle: Shaders/\(fileName).metal")
             }
@@ -104,7 +134,7 @@ public class MetalEngine: @unchecked Sendable {
         }
 
         do {
-            metalLibrary = try device.makeLibrary(source: combinedSource, options: nil)
+            return try device.makeLibrary(source: combinedSource, options: nil)
         } catch {
             throw MetalEngineError.generalError(message: "Failed to compile combined Metal library from source: \(error.localizedDescription)")
         }
