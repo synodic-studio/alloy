@@ -6,8 +6,13 @@ public extension CommonMetalEngine {
     /// - Parameters:
     ///   - center: Center point of the donut (defaults to image center if nil)
     ///   - innerRadius: Inner radius of the donut mask
+    ///   - featherPixels: Edge feather width in pixels. Defaults to 0 (hard
+    ///     edge, the original behavior) so existing callers — notably the
+    ///     detection pipeline, which consumes this mask as a binary input —
+    ///     see no change. Pass a small positive value (e.g. 1) to anti-alias
+    ///     the ring for display purposes.
     /// - Returns: CommonMetalEngine for chaining
-    func donutMask(center: (x: Int, y: Int)? = nil, innerRadius: Int) throws -> CommonMetalEngine {
+    func donutMask(center: (x: Int, y: Int)? = nil, innerRadius: Int, featherPixels: Float = 0) throws -> CommonMetalEngine {
         // Validate that engine has been configured with dimensions
         guard inputWidth > 0, inputHeight > 0 else {
             throw MetalEngineError.generalError(message: "Engine must be configured with input dimensions before applying donut mask. Call withRGBAData() or withRawData() first.")
@@ -62,6 +67,7 @@ public extension CommonMetalEngine {
             params: DonutParams(
                 center: SIMD2<UInt32>(UInt32(maskCenter.x), UInt32(maskCenter.y)),
                 innerRadius: UInt32(innerRadius),
+                featherPixels: featherPixels,
             ),
             threadgroupSize: nil,
         )
