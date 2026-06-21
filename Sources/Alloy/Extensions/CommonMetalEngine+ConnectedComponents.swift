@@ -53,7 +53,11 @@ public extension CommonMetalEngine {
             name: "connectedComponents",
             inputTexture: tempTexture,
             outputTexture: outputTexture,
-            params: ConnectedComponentsParams(maxComponents: maxComponents, maxPixelsPerBlob: maxPixelsPerBlob),
+            params: ConnectedComponentsParams(
+                maxComponents: maxComponents,
+                maxPixelsPerBlob: maxPixelsPerBlob,
+                searchWindowSize: connectedComponentsSearchReach(forMaxPixelsPerBlob: maxPixelsPerBlob),
+            ),
             threadgroupSize: nil,
         )
 
@@ -139,7 +143,7 @@ public extension CommonMetalEngine {
             texture: outputTexture,
             width: inputTexture.width,
             height: inputTexture.height,
-            centroids: centroids,
+            centroids: deduplicateComponents(centroids),
         )
     }
 
@@ -249,11 +253,51 @@ public extension CommonMetalEngine {
             texture: outputTexture,
             width: inputWidth,
             height: inputHeight,
-            centroids: centroids,
+            centroids: deduplicateComponents(centroids),
         )
     }
 
     // MARK: - Private Methods
+
+    /// The shader's per-pixel "already claimed" check only looks 1 pixel
+    /// up/left, which can miss sharply curved edges (e.g. near the top of a
+    /// circle, where the boundary shifts by more than 1px between rows) and
+    /// spawn more than one seed for the same physical blob. Each duplicate
+    /// seed then independently (and accurately) re-counts nearly the whole
+    /// blob, so duplicates land within a pixel or two of each other -
+    /// genuinely separate balls are always farther apart than that.
+    private static let duplicateCentroidDistanceSquared: Float = 25.0 // 5px
+
+    private func deduplicateComponents(_ centroids: [ComponentCentroid]) -> [ComponentCentroid] {
+        var merged: [ComponentCentroid] = []
+
+        for candidate in centroids {
+            if let existingIndex = merged.firstIndex(where: { existing in
+                let dx = existing.x - candidate.x
+                let dy = existing.y - candidate.y
+                return (dx * dx + dy * dy) < Self.duplicateCentroidDistanceSquared
+            }) {
+                // Keep whichever registration counted more of the blob.
+                if candidate.pixelCount > merged[existingIndex].pixelCount {
+                    merged[existingIndex] = candidate
+                }
+            } else {
+                merged.append(candidate)
+            }
+        }
+
+        return merged
+    }
+
+    /// Derives how far the connectedComponents kernel should scan from each
+    /// blob's seed pixel. A solid disc with area `maxPixelsPerBlob` has
+    /// radius sqrt(area / pi); add a margin for non-circular/eroded edges so
+    /// blobs right at the cap aren't truncated before the area filter even
+    /// sees them.
+    private func connectedComponentsSearchReach(forMaxPixelsPerBlob maxPixelsPerBlob: Int) -> Int {
+        let radius = (Double(maxPixelsPerBlob) / Double.pi).squareRoot()
+        return Int(radius.rounded(.up)) + 4
+    }
 
     private func executeConnectedComponentsShader(
         inputTexture: MTLTexture,
@@ -280,7 +324,11 @@ public extension CommonMetalEngine {
         computeEncoder.setBuffer(countBuffer, offset: 0, index: 2)
 
         // Set shader parameters
-        let params = ConnectedComponentsParams(maxComponents: maxComponents, maxPixelsPerBlob: maxPixelsPerBlob)
+        let params = ConnectedComponentsParams(
+            maxComponents: maxComponents,
+            maxPixelsPerBlob: maxPixelsPerBlob,
+            searchWindowSize: connectedComponentsSearchReach(forMaxPixelsPerBlob: maxPixelsPerBlob),
+        )
         withUnsafeBytes(of: params) { rawBufferPointer in
             computeEncoder.setBytes(
                 rawBufferPointer.baseAddress!,

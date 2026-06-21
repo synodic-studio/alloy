@@ -122,6 +122,49 @@ struct ConnectedComponentsTests {
         #expect(result.centroids[0].pixelCount >= 3, "Diagonal line should have multiple pixels")
     }
 
+    // MARK: - Round Target Tests
+
+    @Test("Round blob centroid is not skewed by directional scan bias")
+    func roundBlobCentroidIsCentered() throws {
+        // A solid disc's topmost pixel sits near its horizontal center, with
+        // rows below it bulging out to BOTH sides. A scan that only looks
+        // right/down from that seed pixel misses the left hemisphere.
+        let width = 40
+        let height = 40
+        let center = (x: 20, y: 20)
+        let radius = 10
+        let testImage = createFilledCircleImage(width: width, height: height, center: center, radius: radius)
+
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+
+        let result = try engine
+            .withRGBAData(width: width, height: height)
+            .executeConnectedComponents(data: testImage, maxComponents: 5, maxPixelsPerBlob: 500)
+
+        #expect(result.centroids.count == 1, "Should detect exactly one round blob")
+
+        guard let centroid = result.centroids.first else { return }
+
+        #expect(abs(centroid.x - Float(center.x)) < 1.0, "Centroid X should land on true center, not skewed right by scan direction")
+        #expect(abs(centroid.y - Float(center.y)) < 1.0, "Centroid Y should land on true center")
+
+        let expectedArea = Double.pi * Double(radius * radius)
+        #expect(Double(centroid.pixelCount) > expectedArea * 0.85, "Pixel count should reflect the full disc, not a directional fraction of it")
+    }
+
+    @Test("Large round blob is filtered out by maxPixelsPerBlob")
+    func largeRoundBlobFilteredByMaxPixelsPerBlob() throws {
+        let testImage = createFilledCircleImage(width: 40, height: 40, center: (x: 20, y: 20), radius: 10)
+
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+
+        let result = try engine
+            .withRGBAData(width: 40, height: 40)
+            .executeConnectedComponents(data: testImage, maxComponents: 5, maxPixelsPerBlob: 50)
+
+        #expect(result.centroids.isEmpty, "Round blob larger than the cap should be filtered out")
+    }
+
     // MARK: - Integration Tests
 
     @Test("Connected components after erosion pipeline")
@@ -165,6 +208,33 @@ struct ConnectedComponentsTests {
         let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
 
         #expect(timeElapsed < 2.0, "Connected components should complete in under 2 seconds for 100x100 image")
+    }
+
+    @Test("Connected components performance with raised maxPixelsPerBlob and multiple round blobs")
+    func connectedComponentsPerformanceWithRaisedCapAndRoundBlobs() throws {
+        // Realistic crop size and several ball-sized round blobs, at the
+        // raised maxPixelsPerBlob the production cap is moving to - the
+        // symmetric scan window grows with this cap, so this is the case
+        // that actually needs to stay fast, not just the small default.
+        let width = 300
+        let height = 300
+        let radius = 12
+        let centers = [
+            (x: 60, y: 60), (x: 220, y: 80), (x: 100, y: 200),
+            (x: 250, y: 240), (x: 150, y: 150), (x: 40, y: 260),
+        ]
+        let testImage = createMultiCircleImage(width: width, height: height, centers: centers, radius: radius)
+
+        guard let engine = CommonMetalEngine() else { throw TestError.engineInitializationFailed }
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let result = try engine
+            .withRGBAData(width: width, height: height)
+            .executeConnectedComponents(data: testImage, maxComponents: 20, maxPixelsPerBlob: 500)
+        let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+
+        #expect(result.centroids.count == centers.count, "Should detect each round blob exactly once")
+        #expect(timeElapsed < 0.5, "Connected components should stay fast at the raised cap")
     }
 
     // MARK: - Helper Methods
@@ -241,6 +311,40 @@ struct ConnectedComponentsTests {
                 }
 
                 data.append(contentsOf: [r, g, b, 255])
+            }
+        }
+
+        return data
+    }
+
+    private func createFilledCircleImage(width: Int, height: Int, center: (x: Int, y: Int), radius: Int) -> Data {
+        var data = Data(capacity: width * height * 4)
+
+        for y in 0 ..< height {
+            for x in 0 ..< width {
+                let dx = x - center.x
+                let dy = y - center.y
+                let isInside = dx * dx + dy * dy <= radius * radius
+                let value: UInt8 = isInside ? 255 : 0
+                data.append(contentsOf: [value, value, value, 255])
+            }
+        }
+
+        return data
+    }
+
+    private func createMultiCircleImage(width: Int, height: Int, centers: [(x: Int, y: Int)], radius: Int) -> Data {
+        var data = Data(capacity: width * height * 4)
+
+        for y in 0 ..< height {
+            for x in 0 ..< width {
+                let isInside = centers.contains { center in
+                    let dx = x - center.x
+                    let dy = y - center.y
+                    return dx * dx + dy * dy <= radius * radius
+                }
+                let value: UInt8 = isInside ? 255 : 0
+                data.append(contentsOf: [value, value, value, 255])
             }
         }
 

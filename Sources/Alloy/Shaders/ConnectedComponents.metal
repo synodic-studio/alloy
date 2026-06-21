@@ -79,10 +79,24 @@ kernel void connectedComponents(
     uint maxX = gid.x;
     uint minY = gid.y;
     uint maxY = gid.y;
-    
-    // Simple 8-connected flood fill counting
-    for (uint y = gid.y; y < inputTexture.get_height() && y < gid.y + params.searchWindowSize; y++) {
-        for (uint x = gid.x; x < inputTexture.get_width() && x < gid.x + params.searchWindowSize; x++) {
+
+    // The seed is always the topmost-then-leftmost pixel of the blob (raster
+    // scan order), so nothing can lie above it - but for non-rectangular
+    // shapes (a circle, e.g. a ball), rows below the seed bulge out to BOTH
+    // sides of it, not just the right. Scan symmetrically in x; only y stays
+    // downward-only. searchWindowSize is the reach in each direction.
+    int reach = int(params.searchWindowSize);
+    uint xMin = uint(max(0, int(gid.x) - reach));
+    uint xMax = uint(min(int(inputTexture.get_width()), int(gid.x) + reach));
+    uint yMax = uint(min(int(inputTexture.get_height()), int(gid.y) + 2 * reach));
+
+    // Bail out once the blob is already known to exceed the area filter -
+    // it will be discarded below regardless, so finishing the scan is wasted
+    // work.
+    bool exceededCap = false;
+
+    for (uint y = gid.y; y < yMax && !exceededCap; y++) {
+        for (uint x = xMin; x < xMax && !exceededCap; x++) {
             uint2 pos = uint2(x, y);
             if (isWhitePixel(inputTexture, pos)) {
                 // Check if this pixel is connected to our starting pixel
@@ -95,7 +109,7 @@ kernel void connectedComponents(
                         for (int dx = -1; dx <= 1 && !connected; dx++) {
                             if (dx == 0 && dy == 0) continue;
                             uint2 adjPos = uint2(int2(x, y) + int2(dx, dy));
-                            if (adjPos.x >= gid.x && adjPos.y >= gid.y && 
+                            if (adjPos.x >= xMin && adjPos.y >= gid.y &&
                                 adjPos.x < x + 1 && adjPos.y < y + 1 &&
                                 adjPos.x < inputTexture.get_width() && adjPos.y < inputTexture.get_height()) {
                                 if (isWhitePixel(inputTexture, adjPos)) {
@@ -105,7 +119,7 @@ kernel void connectedComponents(
                         }
                     }
                 }
-                
+
                 if (connected) {
                     pixelCount++;
                     sumX += float(x);
@@ -114,6 +128,10 @@ kernel void connectedComponents(
                     maxX = max(maxX, x);
                     minY = min(minY, y);
                     maxY = max(maxY, y);
+
+                    if (pixelCount > params.maxPixelsPerBlob) {
+                        exceededCap = true;
+                    }
                 }
             }
         }
