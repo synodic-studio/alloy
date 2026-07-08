@@ -4,6 +4,8 @@ A Swift Metal framework for GPU-accelerated image processing. Chain shader opera
 
 Zero external dependencies. macOS 14.0+. Swift 5.9+.
 
+An experimental **phantom-typed pipeline** layers compile-time stage safety over the engine, so invalid orderings (eroding before thresholding, debayering RGBA) fail to compile instead of producing silent garbage at runtime — see [Type-Safe Pipelines](#type-safe-pipelines-phantom-types).
+
 ## Usage
 
 ```swift
@@ -31,6 +33,31 @@ let cropped = try engine
 let texture = result.texture
 let image = result.asNSImage()
 ```
+
+## Type-Safe Pipelines (phantom types)
+
+> **Experimental.** A typed frontend over `CommonMetalEngine`. Additive — the untyped builder above is unchanged.
+
+`Pipeline<State>` carries the *semantic kind* of the image (`ColorImage`, `Binary`, …) in a **phantom type parameter** — an uninhabited marker that exists only at compile time. Each operation is offered *only* in a constrained extension where the state permits it, so misordered stages are a compile error, not a runtime surprise:
+
+```swift
+let blobs = try Pipeline
+    .rgba(width: 512, height: 512)   // Pipeline<ColorImage>
+    .blackAndWhite(threshold: 0.5)   // Pipeline<Binary>  — thresholding unlocks binary ops
+    .erosion(iterations: 2)          // Pipeline<Binary>  — offered only where State: BlackAndWhite
+    .connectedComponents(on: frameData, maxComponents: 20)   // terminal: [ComponentCentroid]
+```
+
+Erode before you threshold and it simply won't build:
+
+```swift
+Pipeline.rgba(width: 512, height: 512)
+    .erosion(iterations: 1)
+// error: referencing instance method 'erosion' on 'Pipeline'
+//        requires that 'ColorImage' conform to 'BlackAndWhite'
+```
+
+The state markers (`ImageState`, `BlackAndWhite`, `Binary`) are the constraint vocabulary; a new state that should be erodable just conforms to `BlackAndWhite` and gains `erosion` for free. Compile-time rejection is guarded by `scripts/check-compile-fixtures.sh` (SPM can't assert compile *failures* in a test target). Design rationale and the full migration plan live in [`docs/pipeline-type-safety.md`](docs/pipeline-type-safety.md).
 
 ## Shader Operations
 
