@@ -54,6 +54,54 @@ struct PipelineTests {
         #expect(result.centroids.count >= 1)
     }
 
+    /// A full raw pipeline — raw Bayer through debayer, geometric ops, and
+    /// grayscale — must match the equivalent raw `CommonMetalEngine` chain
+    /// byte-for-byte.
+    @Test("raw → debayer → crop → donutMask → grayscale matches raw engine")
+    func rawChainMatchesRawEngine() throws {
+        let width = 256
+        let height = 256
+        let data = Self.makeRawData(width: width, height: height)
+
+        let typed = try Pipeline.rawBayer(width: width, height: height, bitDepth: 8)
+            .debayerRGGB()
+            .squareCrop(center: (x: 128, y: 128), sideLength: 200)
+            .donutMask(innerRadius: 50)
+            .grayscale(strategy: .weighted)
+            .run(on: data)
+
+        guard let engine = CommonMetalEngine() else {
+            throw MetalEngineError.generalError(message: "Failed to create Metal engine")
+        }
+        let raw = try engine
+            .withRawData(width: width, height: height, bitDepth: 8)
+            .debayerRGGB()
+            .squareCrop(center: (x: 128, y: 128), sideLength: 200)
+            .donutMask(innerRadius: 50)
+            .grayscale(strategy: .weighted)
+            .execute(data: data)
+
+        #expect(typed.width == raw.width)
+        #expect(typed.height == raw.height)
+        #expect(typed.data == raw.data)
+    }
+
+    /// The `peakDetection` terminal is offered on `Grayscale` and returns the
+    /// marked visualization image at the pipeline's dimensions.
+    @Test("peakDetection terminal runs on the grayscale state")
+    func peakDetectionTerminal() throws {
+        let width = 256
+        let height = 256
+        let data = Self.makeRGBAData(width: width, height: height)
+
+        let result = try Pipeline.rgba(width: width, height: height)
+            .grayscale(strategy: .maxChannelRG)
+            .peakDetection(on: data, neighborhoodSize: 3, threshold: 0.5)
+
+        #expect(result.width == width)
+        #expect(result.height == height)
+    }
+
     // MARK: - Fixtures
 
     private static func makeRGBAData(width: Int, height: Int) -> Data {
@@ -64,6 +112,14 @@ struct PipelineTests {
             bytes[i * 4 + 1] = v
             bytes[i * 4 + 2] = v
             bytes[i * 4 + 3] = 255
+        }
+        return Data(bytes)
+    }
+
+    private static func makeRawData(width: Int, height: Int) -> Data {
+        var bytes = [UInt8](repeating: 0, count: width * height) // 8-bit single channel
+        for i in 0 ..< width * height {
+            bytes[i] = UInt8((i * 7) % 256)
         }
         return Data(bytes)
     }
