@@ -8,8 +8,11 @@ import Foundation
 public extension Pipeline where State == RawBayer {
     /// Entry point: a pipeline seeded with raw Bayer sensor data.
     static func rawBayer(width: Int, height: Int, bitDepth: Int = 8) -> Pipeline<RawBayer> {
-        Pipeline<RawBayer>(width: width, height: height) { engine in
-            try engine.withRawData(width: width, height: height, bitDepth: bitDepth)
+        Pipeline<RawBayer>(width: width, height: height) {
+            guard let engine = CommonMetalEngine() else {
+                throw MetalEngineError.generalError(message: "Failed to create Metal engine")
+            }
+            return try engine.withRawData(width: width, height: height, bitDepth: bitDepth)
         }
     }
 

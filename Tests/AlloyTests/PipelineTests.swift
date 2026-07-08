@@ -170,6 +170,86 @@ struct PipelineTests {
         #expect(result.positions.count == positions.count)
     }
 
+    /// Proof for the GravityWell migration: for each of the four linear builder
+    /// shapes, the typed `colorBase(...).…prepared()` chain must produce
+    /// byte-identical output to the current direct `CommonMetalEngine` chain.
+    /// Uses a non-`weighted` strategy so a hard-coded strategy would be caught.
+    @Test("colorBase + prepared matches direct engine for all GW builder shapes")
+    func gwBuilderShapesAreByteIdentical() throws {
+        let w = 256
+        let h = 256
+        let data = Self.makeRGBAData(width: w, height: h)
+        let center = (x: 128, y: 128)
+        let side = 200
+        let inner = 25
+        let strategy: GrayscaleConversionStrategy = .maxChannelRG
+        let threshold = 0.4
+        let erosion = 2
+
+        func base() throws -> CommonMetalEngine {
+            guard let e = CommonMetalEngine() else {
+                throw MetalEngineError.generalError(message: "engine")
+            }
+            return try e.withRGBAData(width: w, height: h)
+        }
+
+        // 1. Preprocessing: crop → donut → hard binary (strategy) → erosion
+        let preDirect = try base()
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner)
+            .grayscale(strategy: strategy, blackThreshold: threshold, whiteThreshold: threshold)
+            .erosion(iterations: erosion, connectivity: .eight)
+            .execute(data: data)
+        let prePipe = try Pipeline.colorBase(base(), width: w, height: h)
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner)
+            .blackAndWhite(strategy: strategy, threshold: threshold)
+            .erosion(iterations: erosion, connectivity: .eight)
+            .prepared()
+            .execute(data: data)
+        #expect(preDirect.data == prePipe.data)
+
+        // 2. Grayscale: crop → donut → grayscale
+        let grayDirect = try base()
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner)
+            .grayscale(strategy: strategy)
+            .execute(data: data)
+        let grayPipe = try Pipeline.colorBase(base(), width: w, height: h)
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner)
+            .grayscale(strategy: strategy)
+            .prepared()
+            .execute(data: data)
+        #expect(grayDirect.data == grayPipe.data)
+
+        // 3. Threshold: crop → donut → hard binary (no erosion)
+        let threshDirect = try base()
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner)
+            .grayscale(strategy: strategy, blackThreshold: threshold, whiteThreshold: threshold)
+            .execute(data: data)
+        let threshPipe = try Pipeline.colorBase(base(), width: w, height: h)
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner)
+            .blackAndWhite(strategy: strategy, threshold: threshold)
+            .prepared()
+            .execute(data: data)
+        #expect(threshDirect.data == threshPipe.data)
+
+        // 4. Color: crop → feathered donut (stays colour)
+        let colorDirect = try base()
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner, featherPixels: 1)
+            .execute(data: data)
+        let colorPipe = try Pipeline.colorBase(base(), width: w, height: h)
+            .squareCrop(center: center, sideLength: side)
+            .donutMask(innerRadius: inner, featherPixels: 1)
+            .prepared()
+            .execute(data: data)
+        #expect(colorDirect.data == colorPipe.data)
+    }
+
     // MARK: - Fixtures
 
     private static func makeRGBAData(width: Int, height: Int) -> Data {
