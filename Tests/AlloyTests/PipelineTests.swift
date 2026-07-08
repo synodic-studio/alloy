@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Metal
 import Testing
@@ -100,6 +101,46 @@ struct PipelineTests {
 
         #expect(result.width == width)
         #expect(result.height == height)
+    }
+
+    /// Blur on the grayscale state preserves it and matches the raw engine
+    /// byte-for-byte.
+    @Test("grayscale blur matches raw engine and stays grayscale")
+    func grayscaleBlurMatchesRawEngine() throws {
+        let width = 256
+        let height = 256
+        let data = Self.makeRGBAData(width: width, height: height)
+
+        let typed = try Pipeline.rgba(width: width, height: height)
+            .grayscale(strategy: .weighted)
+            .blur(radius: 2)
+            .run(on: data)
+
+        guard let engine = CommonMetalEngine() else {
+            throw MetalEngineError.generalError(message: "Failed to create Metal engine")
+        }
+        let raw = try engine
+            .withRGBAData(width: width, height: height)
+            .grayscale(strategy: .weighted)
+            .blur(radius: 2)
+            .execute(data: data)
+
+        #expect(typed.data == raw.data)
+    }
+
+    /// The colour-sampling terminal returns one colour per requested position.
+    @Test("sampleColors terminal returns a colour per position")
+    func colorSamplingTerminal() throws {
+        let width = 256
+        let height = 256
+        let data = Self.makeRGBAData(width: width, height: height)
+        let positions = [CGPoint(x: 10, y: 10), CGPoint(x: 128, y: 128), CGPoint(x: 200, y: 50)]
+
+        let result = try Pipeline.rgba(width: width, height: height)
+            .sampleColors(on: data, at: positions, radius: 3.0)
+
+        #expect(result.colors.count == positions.count)
+        #expect(result.positions.count == positions.count)
     }
 
     // MARK: - Fixtures
