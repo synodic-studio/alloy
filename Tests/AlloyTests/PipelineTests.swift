@@ -128,6 +128,33 @@ struct PipelineTests {
         #expect(typed.data == raw.data)
     }
 
+    /// A binary image relaxed via `asGrayscale()` can then be blurred, and the
+    /// result matches the raw engine's blackAndWhite→blur chain byte-for-byte
+    /// (asGrayscale is a zero-cost type change — no shader runs).
+    @Test("asGrayscale then blur matches raw blackAndWhite→blur")
+    func asGrayscaleThenBlurMatchesRawEngine() throws {
+        let width = 256
+        let height = 256
+        let data = Self.makeRGBAData(width: width, height: height)
+
+        let typed = try Pipeline.rgba(width: width, height: height)
+            .blackAndWhite(threshold: 0.5)
+            .asGrayscale()
+            .blur(radius: 2)
+            .run(on: data)
+
+        guard let engine = CommonMetalEngine() else {
+            throw MetalEngineError.generalError(message: "Failed to create Metal engine")
+        }
+        let raw = try engine
+            .withRGBAData(width: width, height: height)
+            .blackAndWhite(threshold: 0.5)
+            .blur(radius: 2)
+            .execute(data: data)
+
+        #expect(typed.data == raw.data)
+    }
+
     /// The colour-sampling terminal returns one colour per requested position.
     @Test("sampleColors terminal returns a colour per position")
     func colorSamplingTerminal() throws {
