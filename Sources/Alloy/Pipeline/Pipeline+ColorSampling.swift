@@ -2,8 +2,8 @@
 //  Pipeline+ColorSampling.swift
 //  Alloy
 //
-//  Colour sampling is a *branching* terminal, not a linear stage: it takes the
-//  colour image plus a list of pixel positions and returns the colours at those
+//  Color sampling is a *branching* terminal, not a linear stage: it takes the
+//  color image plus a list of pixel positions and returns the colors at those
 //  points — it doesn't hand back a "next state" to keep chaining. So it's
 //  modelled as a terminal offered only on ColorImage, like connectedComponents
 //  is on Binary.
@@ -13,8 +13,8 @@ import CoreGraphics
 import Foundation
 
 public extension Pipeline where State == ColorImage {
-    /// Sample colours at the given positions on the (fully processed) colour
-    /// image. Executes the recorded chain to a colour texture, then samples it
+    /// Sample colors at the given positions on the (fully processed) color
+    /// image. Executes the recorded chain to a color texture, then samples it
     /// on-GPU — no CPU roundtrip. Terminal.
     func sampleColors(
         on data: Data,

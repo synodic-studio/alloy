@@ -72,7 +72,7 @@ public extension Pipeline where State == ColorImage {
         }
     }
 
-    /// Adopt an existing engine already configured to a full-frame colour state
+    /// Adopt an existing engine already configured to a full-frame color state
     /// (e.g. GravityWell's `makeFullFrameColorBaseEngine()`), so its downstream
     /// stages gain compile-time ordering safety.
     ///

@@ -38,7 +38,7 @@ public protocol BlackAndWhite: DevelopedImage {}
 /// Raw Bayer sensor data — the only valid next step is `debayerRGGB`.
 public enum RawBayer: ImageState {}
 
-/// Full-colour (RGBA) image state — the input to grayscale / thresholding.
+/// Full-color (RGBA) image state — the input to grayscale / thresholding.
 ///
 /// Named `ColorImage` rather than `Color` deliberately: a module-scoped
 /// `Color` shadows `SwiftUI.Color` for any file importing both, which is

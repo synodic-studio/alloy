@@ -2,7 +2,7 @@
 //  Pipeline+Noise.swift
 //  Alloy
 //
-//  Noise injection, like blur, is offered only on colour and grayscale images
+//  Noise injection, like blur, is offered only on color and grayscale images
 //  (state-preserving). It is not offered on Binary — noise destroys binariness.
 //  To noise a binary image, relax it first with `.asGrayscale()`.
 //
@@ -10,7 +10,7 @@
 import Foundation
 
 public extension Pipeline where State == ColorImage {
-    /// Inject random noise; preserves the colour state.
+    /// Inject random noise; preserves the color state.
     func noise(
         magnitude: Double,
         seed: UInt32? = nil,

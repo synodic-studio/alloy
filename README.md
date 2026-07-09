@@ -4,7 +4,7 @@ A Swift Metal framework for GPU-accelerated image processing. Chain shader opera
 
 Zero external dependencies. macOS 14.0+. Swift 5.9+.
 
-An experimental **phantom-typed pipeline** layers compile-time stage safety over the engine, so invalid orderings (eroding before thresholding, debayering RGBA) fail to compile instead of producing silent garbage at runtime — see [Type-Safe Pipelines](#type-safe-pipelines-phantom-types).
+A **phantom-typed pipeline** (v0.2.0) layers compile-time stage safety over the engine, so invalid orderings (eroding before thresholding, debayering RGBA) fail to compile instead of producing silent garbage at runtime — see [Type-Safe Pipelines](#type-safe-pipelines-phantom-types).
 
 ## Usage
 
@@ -57,7 +57,7 @@ Pipeline.rgba(width: 512, height: 512)
 //        requires that 'ColorImage' conform to 'BlackAndWhite'
 ```
 
-The state markers (`ImageState`, `DevelopedImage`, `BlackAndWhite`, `Binary`, …) are the constraint vocabulary; a new state that should be erodable just conforms to `BlackAndWhite` and gains `erosion` for free. Transitions are explicit: `blackAndWhite` moves colour → binary; `blur`/`noise` aren't offered on a binary image at all (they'd destroy binariness — relax it first with the zero-cost `asGrayscale()`); branching ops like `connectedComponents` and `sampleColors` are typed terminals. For hot loops, `prepared()` builds the engine once and returns it, so you execute it per frame with no per-frame allocation — how GravityWell drives it at 30fps.
+The state markers (`ImageState`, `DevelopedImage`, `BlackAndWhite`, `Binary`, …) are the constraint vocabulary; a new state that should be erodable just conforms to `BlackAndWhite` and gains `erosion` for free. Transitions are explicit: `blackAndWhite` moves color → binary; `blur`/`noise` aren't offered on a binary image at all (they'd destroy binariness — relax it first with the zero-cost `asGrayscale()`); branching ops like `connectedComponents` and `sampleColors` are typed terminals. For hot loops, `prepared()` builds the engine once and returns it, so you execute it per frame with no per-frame allocation — how GravityWell drives it at 30fps.
 
 Compile-time rejection is guarded by `scripts/check-compile-fixtures.sh` (SPM can't assert compile *failures* in a test target). Design rationale lives in [`docs/pipeline-type-safety.md`](docs/pipeline-type-safety.md).
 

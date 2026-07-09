@@ -16,7 +16,7 @@ public extension Pipeline where State == RawBayer {
         }
     }
 
-    /// Demosaic RGGB Bayer data into a full-colour image. The only operation
+    /// Demosaic RGGB Bayer data into a full-color image. The only operation
     /// offered on `RawBayer`, and the only way to reach `ColorImage` from raw.
     func debayerRGGB(bitDepth: Int? = nil) -> Pipeline<ColorImage> {
         appending { try $0.debayerRGGB(bitDepth: bitDepth) }

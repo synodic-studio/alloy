@@ -2,7 +2,7 @@
 //  Pipeline+HSVPosition.swift
 //  Alloy
 //
-//  HSV-position mapping is a visualization terminal: it remaps a colour image
+//  HSV-position mapping is a visualization terminal: it remaps a color image
 //  into an HSV-position plot for display, not a stage you keep chaining. Offered
 //  only on ColorImage; returns the rendered image.
 //
