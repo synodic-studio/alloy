@@ -250,6 +250,29 @@ struct PipelineTests {
         #expect(colorDirect.data == colorPipe.data)
     }
 
+    /// The explicit two-step path `grayscale(strategy).threshold(t)` produces
+    /// byte-identical output to the fused one-pass `blackAndWhite(strategy, t)`.
+    /// Same result, different pass count — proving the fused op is just an
+    /// optimization of the composable path (non-weighted strategy on purpose).
+    @Test("grayscale + threshold equals fused blackAndWhite")
+    func twoStepThresholdEqualsFused() throws {
+        let w = 256
+        let h = 256
+        let data = Self.makeRGBAData(width: w, height: h)
+        let strategy: GrayscaleConversionStrategy = .maxChannelRG
+        let cut = 0.4
+
+        let twoStep = try Pipeline.rgba(width: w, height: h)
+            .grayscale(strategy: strategy)
+            .threshold(cut)
+            .run(on: data)
+        let fused = try Pipeline.rgba(width: w, height: h)
+            .blackAndWhite(strategy: strategy, threshold: cut)
+            .run(on: data)
+
+        #expect(twoStep.data == fused.data)
+    }
+
     // MARK: - Fixtures
 
     private static func makeRGBAData(width: Int, height: Int) -> Data {
