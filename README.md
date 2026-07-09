@@ -36,7 +36,7 @@ let image = result.asNSImage()
 
 ## Type-Safe Pipelines (phantom types)
 
-> **Experimental.** A typed frontend over `CommonMetalEngine`. Additive — the untyped builder above is unchanged.
+> Additive typed frontend over `CommonMetalEngine` (shipped in v0.2.0). The untyped builder above still works unchanged — and **every** operation now also has a typed `Pipeline` surface. GravityWell's real-time detection engines are built through it.
 
 `Pipeline<State>` carries the *semantic kind* of the image (`ColorImage`, `Binary`, …) in a **phantom type parameter** — an uninhabited marker that exists only at compile time. Each operation is offered *only* in a constrained extension where the state permits it, so misordered stages are a compile error, not a runtime surprise:
 
@@ -57,7 +57,9 @@ Pipeline.rgba(width: 512, height: 512)
 //        requires that 'ColorImage' conform to 'BlackAndWhite'
 ```
 
-The state markers (`ImageState`, `BlackAndWhite`, `Binary`) are the constraint vocabulary; a new state that should be erodable just conforms to `BlackAndWhite` and gains `erosion` for free. Compile-time rejection is guarded by `scripts/check-compile-fixtures.sh` (SPM can't assert compile *failures* in a test target). Design rationale and the full migration plan live in [`docs/pipeline-type-safety.md`](docs/pipeline-type-safety.md).
+The state markers (`ImageState`, `DevelopedImage`, `BlackAndWhite`, `Binary`, …) are the constraint vocabulary; a new state that should be erodable just conforms to `BlackAndWhite` and gains `erosion` for free. Transitions are explicit: `blackAndWhite` moves colour → binary; `blur`/`noise` aren't offered on a binary image at all (they'd destroy binariness — relax it first with the zero-cost `asGrayscale()`); branching ops like `connectedComponents` and `sampleColors` are typed terminals. For hot loops, `prepared()` builds the engine once and returns it, so you execute it per frame with no per-frame allocation — how GravityWell drives it at 30fps.
+
+Compile-time rejection is guarded by `scripts/check-compile-fixtures.sh` (SPM can't assert compile *failures* in a test target). Design rationale lives in [`docs/pipeline-type-safety.md`](docs/pipeline-type-safety.md).
 
 ## Shader Operations
 
